@@ -7,24 +7,55 @@ output: github_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## GitHub Documents
+### Inference Procedure
+Let $\mathbf{y} = (y(\mathbf{s}_1),\ldots, y(\mathbf{s}_n))^\prime$ be the $n$--dimensional vector of data over $n$ locations $\mathbf{s}_1,\ldots,\mathbf{s}_n$ in $d$--dimensional domain $\mathcal{D} \in \mathbb{R}^{d}$. Using marginalization with respect to $\mathbf{z}^\prime = (z(\mathbf{s}_1),\ldots,z(s_n))$, it can be shown that $\mathbf{y}$ is distributed as multivariate normal with $\mathbb{E}[\mathbf{y}] = \mathbf{X}\boldsymbol{\theta}$ and $\text{Var}[\mathbf{y}] = \sigma^2 \mathbf{B} + \tau^2\mathbf{I}$, where $\mathbf{X}$ is a $n \times p$ design matrix based on the vector of covariates $\mathbf{x}(\mathbf{s}_i)$ and $\mathbf{B}$ is the $n$--dimensional correlation matrix whose $(i,j)$th elements is $\mathbf{B}_{ij} = \rho(||\mathbf{s}_i-\mathbf{s}_j||)$. Under the Bayesian paradigm, model specification is complete after assigning a prior distribution for $\boldsymbol{\beta}$, $\sigma$, $\ell$ and $\tau$. Then, following Bayes' theorem, the joint posterior distribution of $\boldsymbol{\Phi} = \{\boldsymbol{\theta}, \sigma, \ell, \tau\}$ is proportional to
+\begin{align}
+\label{chap2:gp_posterior_dist}
+\pi(\boldsymbol{\Phi} \mid \mathbf{y}) \propto \mathcal{N}\left(\mathbf{y} \mid \mathbf{X}\boldsymbol{\theta}, \mathbf{V}\right) \; \pi(\boldsymbol{\Phi}),
+\end{align}
+where $\mathbf{V} = \sigma^2 \mathbf{B} + \tau^2\mathbf{I}$ and $\pi(\boldsymbol{\Phi})$ denotes the prior distribution assigned to $\boldsymbol{\Phi}$. In practice, the distribution $\pi(\boldsymbol{\Phi} \mid \mathbf{y})$ does not have a closed-form, and Markov chain Monte Carlo (MCMC) sampling methods are commonly employed to approximate this distribution. These methods are straightforward to implement using modern statistical computing platforms such as \texttt{BUGS}, \texttt{JAGS} , \texttt{NIMBLE}, and \texttt{Stan}. MCMC methods provide samples from the posterior distribution, which can be used to estimate various summary statistics. Once samples from the posterior distribution are available, predictions to unobserved locations follow straightforwardly.
 
-This is an R Markdown format used for publishing markdown documents to GitHub. When you click the **Knit** button all R code chunks are run and a markdown file (.md) suitable for publishing to GitHub is generated.
+### Spatial Prediction
+To predict the responses $\mathbf{y}^{\star} = (y(\mathbf{s}_1^\star),\ldots,y(\mathbf{s}_{n^\star}^\star))^\prime$ at any set of $n^\star$ unobserved locations $\mathbf{s}_1^\star,\ldots,\mathbf{s}_{n^\star}^\star$, consider the joint vector $(\mathbf{y}^{\star\prime},\mathbf{y}^\prime)$, under a Gaussian process assumption whose distribution is $(n^\star + n)$--dimensional multivariate normal. Consequently, the conditional distribution $\mathbf{y}^\star$ given $\mathbf{y}$ is $n^\star$--dimensional multivariate normal with conditional mean and variance, respectively, given by 
+\begin{align}
+\mathbb{E}[\mathbf{y}^\star \mid \mathbf{y}] &= 
+\mathbf{X}^\star\boldsymbol{\theta} + \mathbf{V}^{\text{pred-to-obs}} \mathbf{V}^{-1} (\mathbf{y} - \mathbf{X}\boldsymbol{\theta})\\
+\text{and} \quad \text{Var}[\mathbf{y}^\star \mid \mathbf{y}] &= \mathbf{V}^\star - \mathbf{V}^{\text{pred-to-obs}} \mathbf{V}^{-1} \mathbf{V}^{\text{obs-to-pred}},
+\end{align}
+which is used to perform the prediction, where $\mathbf{X}^\star$ is the $n^\star \times p$ design matrix of covariates at prediction locations. The covariance matrix $\mathbf{V}^\star$ is equal to $\sigma^2 \mathbf{B}^\star + \tau^2 \mathbf{I}$, where $\mathbf{B}^\star$ denotes the $n^\star$--dimensional spatial correlation matrix among the prediction locations. The component $\mathbf{V}^{\text{pred-to-obs}}$ is equal to $\sigma^2 \mathbf{B}^{\text{pred-to-obs}}$, where $\mathbf{B}^\text{pred-to-obs}$ denotes the $n^\star \times n$ spatial correlation matrix between prediction and observed locations.
 
-## Including Code
+Note that the model above specification is referred to as the marginal or response Gaussian model, and the inference and prediction procedures are outlined based on it. However, this model can be represented hierarchically as follows:
+\begin{align}
+\begin{split}
+\mathbf{y} \mid \boldsymbol{\theta}, \mathbf{z} &\sim \mathcal{N} \left(\mathbf{X}\boldsymbol{\theta} + \mathbf{z}, \tau^2\mathbf{I}\right),\\
+\mathbf{z} &\sim \mathcal{N}(\mathbf{0}, \sigma^2\mathbf{B}).
+\end{split}
+\end{align}
+In practice, the response Gaussian process model is often preferred for efficient parameter estimation, as it circumvents the need to estimate the latent vector $\mathbf{z}$ directly. Instead, in a Bayesian analysis, once posterior samples for the parameters are obtained, estimates for $\mathbf{z}$ can be recovered through composition sampling techniques.
 
-You can include R code in the document as follows:
+### Recovery of the Latent Component
+One might be interested in the posterior distribution of the latent spatial component $z(\boldsymbol{s})$. The inference using joint posterior distribution in equation~\eqref{chap2:gp_posterior_dist} ignores the estimation of the latent vector $\mathbf{z}^\prime = (z(\boldsymbol{s}_1), \ldots, z(\boldsymbol{s}_n))$ during model fitting. Nevertheless, we can recover the distribution of vector $\mathbf{z}$ components via composition sampling once samples from the posterior distribution of the parameters are available. Note that the joint posterior distribution of $\mathbf{z}$ is
+\begin{align}
+\pi(\mathbf{z} \mid \mathbf{y}) &= \int \pi(\boldsymbol{\Phi}, \mathbf{z} \mid \mathbf{y}) \; \mathrm{d} \boldsymbol{\Phi} \nonumber\\
+&= \int \pi(\mathbf{z} \mid \boldsymbol{\Phi}, \mathbf{y}) \; \pi(\boldsymbol{\Phi} \mid \mathbf{y}) \; \mathrm{d} \boldsymbol{\Phi},
+\end{align}
+and
+\begin{align}
+\pi(\mathbf{z} \mid \boldsymbol{\Phi}, \mathbf{y})
+&\propto \mathcal{N}(\mathbf{z} \mid \mathbf{0}, \sigma^2 \mathbf{B}) \; \mathcal{N}\left(\mathbf{y} \mid \mathbf{X}\boldsymbol{\theta} + \mathbf{z}, \tau^2\mathbf{I}\right) \nonumber\\
+&\propto \exp\left\{-\frac{1}{2\sigma^2} \mathbf{z}^\prime \mathbf{B}^{-1} \mathbf{z}\right\} \; \exp\left\{-\frac{1}{2\tau^2} (\mathbf{y} - \mathbf{X}\boldsymbol{\theta} -\mathbf{z})^\prime (\mathbf{y} - \mathbf{X}\boldsymbol{\theta} - \mathbf{z})\right\} \nonumber\\
+&\propto \exp\left\{-\frac{1}{2}\mathbf{z}^\prime \left(\frac{1}{\tau^2} \mathbf{I} + \frac{1}{\sigma^2}\mathbf{B}^{-1} \right) \mathbf{z} - \mathbf{z}^\prime \left(\frac{1}{\tau^2} \mathbf{I}\right) (\mathbf{y} - \mathbf{X}\boldsymbol{\theta})\right\},
+\end{align}
+which is the kernel of the multivariate normal distribution with mean 
+and covariance, 
+\begin{align}
+\mathbb{E}[\mathbf{z} \mid \mathbf{y}] &= \left(\dfrac{1}{\tau^2} \mathbf{I} + \dfrac{1}{\sigma^2}\mathbf{B}^{-1} \right)^{-1} \left(\dfrac{1}{\tau^2} \mathbf{I}\right) (\mathbf{y} - \mathbf{X}\boldsymbol{\theta}),\\
+\text{and}\; \text{Var}[\mathbf{z} \mid \mathbf{y}] &= \left(\dfrac{1}{\tau^2} \mathbf{I} + \dfrac{1}{\sigma^2}\mathbf{B}^{-1} \right)^{-1},
+\end{align}
+respectively. Therefore, posterior samples for $\mathbf{z}$ can be obtained by drawing samples from  $\pi(\mathbf{z} \mid \boldsymbol{\Phi}, \mathbf{y})$ one-for-one for each posterior sample of $\boldsymbol{\Phi}$. These are post-MCMC calculations; hence, sampling is not very expensive. Given the posterior samples for $\mathbf{z}$ associated with observed locations and $\boldsymbol{\Phi}$, it is also possible to obtain samples of the distribution of $n^\star$--dimensional vector $\mathbf{z}^\star$ of the values of $z(\mathbf{s})$ at unobserved locations $\mathbf{s}_{1}^\star, \ldots, \mathbf{s}_{n^\star}^\star$ via composition sampling. The procedure involves assuming joint vectors $(\mathbf{z}^{\star\prime},\mathbf{z}^\prime)$ which follows $(n^\star + n)$--dimensional multivariate normal distribution and conditional distribution of $\mathbf{z}^\star$ given $\mathbf{z}$ is used to draw samples for $\mathbf{z}^\star$. The conditional distribution is $n^\star$--dimensional multivariate normal with mean $\mathbf{E}[\mathbf{z}^\star \mid \mathbf{z}] = \mathbf{B}^{\text{pred-to-obs}} \mathbf{B}^{-1} \mathbf{z}$ and variance $\text{Var}[\mathbf{z}^\star \mid \mathbf{z}] = \sigma^2 (\mathbf{B}^\star - \mathbf{B}^{\text{pred-to-obs}} \mathbf{B}^{-1} \mathbf{B}^{\text{obs-to-pred}})$.
 
-```{r cars}
-summary(cars)
-```
 
-## Including Plots
+## Stan implementation of marginal model
 
-You can also embed plots, for example:
 
-```{r pressure, echo=FALSE}
-plot(pressure)
-```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
