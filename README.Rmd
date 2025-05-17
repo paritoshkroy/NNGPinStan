@@ -6,7 +6,9 @@ output:
     toc_depth: 2
     fig_width: 5
     fig_height: 5
-    pandoc_args: --webtex
+    math_method:
+        engine: webtex
+        url: https://latex.codecogs.com/svg.image?
 ---
 
 ```{r setup, include=FALSE}
