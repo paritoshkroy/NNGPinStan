@@ -4,7 +4,6 @@
 # But not these files...
 !.gitignore
 !.R
-!.Rmd
 !.stan
 !.rda
 # etc...
