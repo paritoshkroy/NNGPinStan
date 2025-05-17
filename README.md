@@ -1,10 +1,10 @@
 Nearest Neighbor GP Models in Stan
 ================
-Paritosh Kumar Roy
-17 May, 2025
 
-- [Stan implementation of marginal
-  model](#stan-implementation-of-marginal-model)
+- [Gaussian Process](#gaussian-process)
+- [Nearest neighbor GP](#nearest-neighbor-gp)
+
+## Gaussian Process
 
 ### Inference Procedure
 
@@ -24,8 +24,10 @@ Bayesian paradigm, model specification is complete after assigning a
 prior distribution for $\boldsymbol{\beta}$, $\sigma$, $\ell$ and
 $\tau$. Then, following Bayes’ theorem, the joint posterior distribution
 of $\boldsymbol{\Phi} = \{\boldsymbol{\theta}, \sigma, \ell, \tau\}$ is
-proportional to  
-  
+proportional to
+
+$$\pi(\boldsymbol{\Phi} \mid \mathbf{y}) \propto \mathcal{N}\left(\mathbf{y} \mid \mathbf{X}\boldsymbol{\theta}, \mathbf{V}\right) \; \pi(\boldsymbol{\Phi}),$$
+
 where $\mathbf{V} = \sigma^2 \mathbf{B} + \tau^2\mathbf{I}$ and
 $\pi(\boldsymbol{\Phi})$ denotes the prior distribution assigned to
 $\boldsymbol{\Phi}$. In practice, the distribution
@@ -49,8 +51,15 @@ Gaussian process assumption whose distribution is
 $(n^\star + n)$–dimensional multivariate normal. Consequently, the
 conditional distribution $\mathbf{y}^\star$ given $\mathbf{y}$ is
 $n^\star$–dimensional multivariate normal with conditional mean and
-variance, respectively, given by  
-  
+variance, respectively, given by
+
+$$
+\begin{align}
+\mathbb{E}[\mathbf{y}^\star \mid \mathbf{y}] = 
+\mathbf{X}^\star\boldsymbol{\theta} + \mathbf{V}^{\text{pred-to-obs}} \mathbf{V}^{-1} (\mathbf{y} - \mathbf{X}\boldsymbol{\theta})\\
+\text{and} \text{Var}[\mathbf{y}^\star \mid \mathbf{y}] = \mathbf{V}^\star - \mathbf{V}^{\text{pred-to-obs}} \mathbf{V}^{-1} \mathbf{V}^{\text{obs-to-pred}},
+\end{align}
+$$  
 which is used to perform the prediction, where $\mathbf{X}^\star$ is the
 $n^\star \times p$ design matrix of covariates at prediction locations.
 The covariance matrix $\mathbf{V}^\star$ is equal to
@@ -66,7 +75,10 @@ Note that the model above specification is referred to as the marginal
 or response Gaussian model, and the inference and prediction procedures
 are outlined based on it. However, this model can be represented
 hierarchically as follows:  
-  
+$$\mathbf{y} \mid \boldsymbol{\theta}, \mathbf{z} \sim \mathcal{N} \left(\mathbf{X}\boldsymbol{\theta} + \mathbf{z}, \tau^2\mathbf{I}\right),$$
+
+$$\mathbf{z} \sim \mathcal{N}(\mathbf{0}, \sigma^2\mathbf{B}).$$
+
 In practice, the response Gaussian process model is often preferred for
 efficient parameter estimation, as it circumvents the need to estimate
 the latent vector $\mathbf{z}$ directly. Instead, in a Bayesian
@@ -85,12 +97,29 @@ during model fitting. Nevertheless, we can recover the distribution of
 vector $\mathbf{z}$ components via composition sampling once samples
 from the posterior distribution of the parameters are available. Note
 that the joint posterior distribution of $\mathbf{z}$ is  
-  
+$$
+\begin{align*}
+\pi(\mathbf{z} \mid \mathbf{y}) &= \int \pi(\boldsymbol{\Phi}, \mathbf{z} \mid \mathbf{y}) \; \mathrm{d} \boldsymbol{\Phi}\\
+&= \int \pi(\mathbf{z} \mid \boldsymbol{\Phi}, \mathbf{y}) \; \pi(\boldsymbol{\Phi} \mid \mathbf{y}) \; \mathrm{d} \boldsymbol{\Phi},
+\end{align*}
+$$  
 and  
-  
+$$
+\begin{align}
+\pi(\mathbf{z} \mid \boldsymbol{\Phi}, \mathbf{y})
+&\propto \mathcal{N}(\mathbf{z} \mid \mathbf{0}, \sigma^2 \mathbf{B}) \; \mathcal{N}\left(\mathbf{y} \mid \mathbf{X}\boldsymbol{\theta} + \mathbf{z}, \tau^2\mathbf{I}\right)\\
+&\propto \exp\left\{-\frac{1}{2\sigma^2} \mathbf{z}^\prime \mathbf{B}^{-1} \mathbf{z}\right\} \; \exp\left\{-\frac{1}{2\tau^2} (\mathbf{y} - \mathbf{X}\boldsymbol{\theta} -\mathbf{z})^\prime (\mathbf{y} - \mathbf{X}\boldsymbol{\theta} - \mathbf{z})\right\} \nonumber\\
+&\propto \exp\left\{-\frac{1}{2}\mathbf{z}^\prime \left(\frac{1}{\tau^2} \mathbf{I} + \frac{1}{\sigma^2}\mathbf{B}^{-1} \right) \mathbf{z} - \mathbf{z}^\prime \left(\frac{1}{\tau^2} \mathbf{I}\right) (\mathbf{y} - \mathbf{X}\boldsymbol{\theta})\right\},
+\end{align}
+$$  
 which is the kernel of the multivariate normal distribution with mean  
 and covariance,  
-  
+$$
+\begin{align}
+\mathbb{E}[\mathbf{z} \mid \mathbf{y}] &= \left(\dfrac{1}{\tau^2} \mathbf{I} + \dfrac{1}{\sigma^2}\mathbf{B}^{-1} \right)^{-1} \left(\dfrac{1}{\tau^2} \mathbf{I}\right) (\mathbf{y} - \mathbf{X}\boldsymbol{\theta}),\\
+\text{and}\; \text{Var}[\mathbf{z} \mid \mathbf{y}] &= \left(\dfrac{1}{\tau^2} \mathbf{I} + \dfrac{1}{\sigma^2}\mathbf{B}^{-1} \right)^{-1},
+\end{align}
+$$  
 respectively. Therefore, posterior samples for $\mathbf{z}$ can be
 obtained by drawing samples from
 $\pi(\mathbf{z} \mid \boldsymbol{\Phi}, \mathbf{y})$ one-for-one for
@@ -111,7 +140,7 @@ $\mathbf{E}[\mathbf{z}^\star \mid \mathbf{z}] = \mathbf{B}^{\text{pred-to-obs}} 
 and variance
 $\text{Var}[\mathbf{z}^\star \mid \mathbf{z}] = \sigma^2 (\mathbf{B}^\star - \mathbf{B}^{\text{pred-to-obs}} \mathbf{B}^{-1} \mathbf{B}^{\text{obs-to-pred}})$.
 
-## Stan implementation of marginal model
+### Stan implementation of marginal model
 
     data {
       int<lower=0> n;
@@ -156,3 +185,7 @@ $\text{Var}[\mathbf{z}^\star \mid \mathbf{z}] = \sigma^2 (\mathbf{B}^\star - \ma
       matrix[n,n] L = cholesky_decompose(add_diag(Sigma, square(tau)));
       y ~ multi_normal_cholesky(mu, L);
     }
+
+### Computational Complexity of the Inference of GP Model
+
+## Nearest neighbor GP
