@@ -20,7 +20,7 @@ knitr::opts_chunk$set(echo = TRUE)
 ### Inference Procedure
 Let $\mathbf{y} = (y(\mathbf{s}_1),\ldots, y(\mathbf{s}_n))^\prime$ be the $n$--dimensional vector of data over $n$ locations $\mathbf{s}_1,\ldots,\mathbf{s}_n$ in $d$--dimensional domain $\mathcal{D} \in \mathbb{R}^{d}$. Using marginalization with respect to $\mathbf{z}^\prime = (z(\mathbf{s}_1),\ldots,z(s_n))$, it can be shown that $\mathbf{y}$ is distributed as multivariate normal with $\mathbb{E}[\mathbf{y}] = \mathbf{X}\boldsymbol{\theta}$ and $\text{Var}[\mathbf{y}] = \sigma^2 \mathbf{B} + \tau^2\mathbf{I}$, where $\mathbf{X}$ is a $n \times p$ design matrix based on the vector of covariates $\mathbf{x}(\mathbf{s}_i)$ and $\mathbf{B}$ is the $n$--dimensional correlation matrix whose $(i,j)$th elements is $\mathbf{B}_{ij} = \rho(||\mathbf{s}_i-\mathbf{s}_j||)$. Under the Bayesian paradigm, model specification is complete after assigning a prior distribution for $\boldsymbol{\beta}$, $\sigma$, $\ell$ and $\tau$. Then, following Bayes' theorem, the joint posterior distribution of $\boldsymbol{\Phi} = \{\boldsymbol{\theta}, \sigma, \ell, \tau\}$ is proportional to
 
-$$\pi(\boldsymbol{\Phi} \mid \mathbf{y}) \propto \mathcal{N}\left(\mathbf{y} \mid \mathbf{X}\boldsymbol{\theta}, \mathbf{V}\right) \; \pi(\boldsymbol{\Phi}),$$
+\[\pi(\boldsymbol{\Phi} \mid \mathbf{y}) \propto \mathcal{N}\left(\mathbf{y} \mid \mathbf{X}\boldsymbol{\theta}, \mathbf{V}\right) \; \pi(\boldsymbol{\Phi}),\]
 
 where $\mathbf{V} = \sigma^2 \mathbf{B} + \tau^2\mathbf{I}$ and $\pi(\boldsymbol{\Phi})$ denotes the prior distribution assigned to $\boldsymbol{\Phi}$. In practice, the distribution $\pi(\boldsymbol{\Phi} \mid \mathbf{y})$ does not have a closed-form, and Markov chain Monte Carlo (MCMC) sampling methods are commonly employed to approximate this distribution. These methods are straightforward to implement using modern statistical computing platforms such as \texttt{BUGS}, \texttt{JAGS} , \texttt{NIMBLE}, and \texttt{Stan}. MCMC methods provide samples from the posterior distribution, which can be used to estimate various summary statistics. Once samples from the posterior distribution are available, predictions to unobserved locations follow straightforwardly.
 
@@ -28,12 +28,13 @@ where $\mathbf{V} = \sigma^2 \mathbf{B} + \tau^2\mathbf{I}$ and $\pi(\boldsymbol
 To predict the responses $\mathbf{y}^{\star} = (y(\mathbf{s}_1^\star),\ldots,y(\mathbf{s}_{n^\star}^\star))^\prime$ at any set of $n^\star$ unobserved locations $\mathbf{s}_1^\star,\ldots,\mathbf{s}_{n^\star}^\star$, consider the joint vector $(\mathbf{y}^{\star\prime},\mathbf{y}^\prime)$, under a Gaussian process assumption whose distribution is $(n^\star + n)$--dimensional multivariate normal. Consequently, the conditional distribution $\mathbf{y}^\star$ given $\mathbf{y}$ is $n^\star$--dimensional multivariate normal with conditional mean and variance, respectively, given by 
 
 $$
-\begin{align}
+\begin{aligned}
 \mathbb{E}[\mathbf{y}^\star \mid \mathbf{y}] = 
 \mathbf{X}^\star\boldsymbol{\theta} + \mathbf{V}^{\text{pred-to-obs}} \mathbf{V}^{-1} (\mathbf{y} - \mathbf{X}\boldsymbol{\theta})\\
 \text{and} \text{Var}[\mathbf{y}^\star \mid \mathbf{y}] = \mathbf{V}^\star - \mathbf{V}^{\text{pred-to-obs}} \mathbf{V}^{-1} \mathbf{V}^{\text{obs-to-pred}},
-\end{align}
+\end{aligned}
 $$
+
 which is used to perform the prediction, where $\mathbf{X}^\star$ is the $n^\star \times p$ design matrix of covariates at prediction locations. The covariance matrix $\mathbf{V}^\star$ is equal to $\sigma^2 \mathbf{B}^\star + \tau^2 \mathbf{I}$, where $\mathbf{B}^\star$ denotes the $n^\star$--dimensional spatial correlation matrix among the prediction locations. The component $\mathbf{V}^{\text{pred-to-obs}}$ is equal to $\sigma^2 \mathbf{B}^{\text{pred-to-obs}}$, where $\mathbf{B}^\text{pred-to-obs}$ denotes the $n^\star \times n$ spatial correlation matrix between prediction and observed locations.
 
 Note that the model above specification is referred to as the marginal or response Gaussian model, and the inference and prediction procedures are outlined based on it. However, this model can be represented hierarchically as follows:
