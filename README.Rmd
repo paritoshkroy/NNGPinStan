@@ -1,6 +1,15 @@
 ---
 title: "Nearest Neighbor GP Models in Stan"
-output: github_document
+author: 
+   - Paritosh Kumar Roy
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output:
+  github_document:
+    toc: true
+    toc_depth: 2
+    fig_width: 5
+    fig_height: 5
+    md_extensions: -autolink_bare_uris+hard_line_breaks
 ---
 
 ```{r setup, include=FALSE}
@@ -56,6 +65,8 @@ respectively. Therefore, posterior samples for $\mathbf{z}$ can be obtained by d
 
 
 ## Stan implementation of marginal model
-
+```{r results='markup',echo=FALSE,comment=""}
+cat(paste(readLines("StanFiles/MarginalLinGeostatModel.stan"), collapse = "\n"))
+```
 
 

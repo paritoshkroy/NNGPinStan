@@ -1,5 +1,10 @@
 Nearest Neighbor GP Models in Stan
 ================
+Paritosh Kumar Roy
+17 May, 2025
+
+- [Stan implementation of marginal
+  model](#stan-implementation-of-marginal-model)
 
 ### Inference Procedure
 
@@ -19,8 +24,9 @@ Bayesian paradigm, model specification is complete after assigning a
 prior distribution for $\boldsymbol{\beta}$, $\sigma$, $\ell$ and
 $\tau$. Then, following Bayes’ theorem, the joint posterior distribution
 of $\boldsymbol{\Phi} = \{\boldsymbol{\theta}, \sigma, \ell, \tau\}$ is
-proportional to where
-$\mathbf{V} = \sigma^2 \mathbf{B} + \tau^2\mathbf{I}$ and
+proportional to  
+  
+where $\mathbf{V} = \sigma^2 \mathbf{B} + \tau^2\mathbf{I}$ and
 $\pi(\boldsymbol{\Phi})$ denotes the prior distribution assigned to
 $\boldsymbol{\Phi}$. In practice, the distribution
 $\pi(\boldsymbol{\Phi} \mid \mathbf{y})$ does not have a closed-form,
@@ -43,10 +49,11 @@ Gaussian process assumption whose distribution is
 $(n^\star + n)$–dimensional multivariate normal. Consequently, the
 conditional distribution $\mathbf{y}^\star$ given $\mathbf{y}$ is
 $n^\star$–dimensional multivariate normal with conditional mean and
-variance, respectively, given by which is used to perform the
-prediction, where $\mathbf{X}^\star$ is the $n^\star \times p$ design
-matrix of covariates at prediction locations. The covariance matrix
-$\mathbf{V}^\star$ is equal to
+variance, respectively, given by  
+  
+which is used to perform the prediction, where $\mathbf{X}^\star$ is the
+$n^\star \times p$ design matrix of covariates at prediction locations.
+The covariance matrix $\mathbf{V}^\star$ is equal to
 $\sigma^2 \mathbf{B}^\star + \tau^2 \mathbf{I}$, where
 $\mathbf{B}^\star$ denotes the $n^\star$–dimensional spatial correlation
 matrix among the prediction locations. The component
@@ -58,12 +65,14 @@ correlation matrix between prediction and observed locations.
 Note that the model above specification is referred to as the marginal
 or response Gaussian model, and the inference and prediction procedures
 are outlined based on it. However, this model can be represented
-hierarchically as follows: In practice, the response Gaussian process
-model is often preferred for efficient parameter estimation, as it
-circumvents the need to estimate the latent vector $\mathbf{z}$
-directly. Instead, in a Bayesian analysis, once posterior samples for
-the parameters are obtained, estimates for $\mathbf{z}$ can be recovered
-through composition sampling techniques.
+hierarchically as follows:  
+  
+In practice, the response Gaussian process model is often preferred for
+efficient parameter estimation, as it circumvents the need to estimate
+the latent vector $\mathbf{z}$ directly. Instead, in a Bayesian
+analysis, once posterior samples for the parameters are obtained,
+estimates for $\mathbf{z}$ can be recovered through composition sampling
+techniques.
 
 ### Recovery of the Latent Component
 
@@ -75,10 +84,15 @@ $\mathbf{z}^\prime = (z(\boldsymbol{s}_1), \ldots, z(\boldsymbol{s}_n))$
 during model fitting. Nevertheless, we can recover the distribution of
 vector $\mathbf{z}$ components via composition sampling once samples
 from the posterior distribution of the parameters are available. Note
-that the joint posterior distribution of $\mathbf{z}$ is and which is
-the kernel of the multivariate normal distribution with mean and
-covariance, respectively. Therefore, posterior samples for $\mathbf{z}$
-can be obtained by drawing samples from
+that the joint posterior distribution of $\mathbf{z}$ is  
+  
+and  
+  
+which is the kernel of the multivariate normal distribution with mean  
+and covariance,  
+  
+respectively. Therefore, posterior samples for $\mathbf{z}$ can be
+obtained by drawing samples from
 $\pi(\mathbf{z} \mid \boldsymbol{\Phi}, \mathbf{y})$ one-for-one for
 each posterior sample of $\boldsymbol{\Phi}$. These are post-MCMC
 calculations; hence, sampling is not very expensive. Given the posterior
@@ -98,3 +112,47 @@ and variance
 $\text{Var}[\mathbf{z}^\star \mid \mathbf{z}] = \sigma^2 (\mathbf{B}^\star - \mathbf{B}^{\text{pred-to-obs}} \mathbf{B}^{-1} \mathbf{B}^{\text{obs-to-pred}})$.
 
 ## Stan implementation of marginal model
+
+    data {
+      int<lower=0> n;
+      int<lower=0> p;
+      vector[n] y;
+      matrix[n,p] X;
+      array[n] vector[2] coords;
+      
+      vector<lower=0>[p] scale_beta;
+      real<lower=0> scale_sigma;
+      real<lower=0> scale_tau;
+      
+      real<lower=0> a;
+      real<lower=0> b;
+    }
+
+    transformed data{
+      
+    }
+
+    parameters {
+      vector[p] beta_std;
+      real<lower=0> phi;
+      real<lower=0> sigma_std;
+      real<lower=0> tau_std;
+    }
+
+    transformed parameters{
+      vector[p] beta = scale_beta .* beta_std;
+      real sigma = scale_sigma * sigma_std;
+      real tau = scale_sigma * tau_std;
+    }
+
+    model {
+      beta_std ~ std_normal();
+      phi ~ inv_gamma(a,b);
+      sigma_std ~ std_normal();
+      tau_std ~ std_normal();
+      vector[n] mu = X*beta;
+      //matrix[n,n] Sigma = gp_matern32_cov(coords, sigma, phi);
+      matrix[n,n] Sigma = gp_exponential_cov(coords, sigma, phi);
+      matrix[n,n] L = cholesky_decompose(add_diag(Sigma, square(tau)));
+      y ~ multi_normal_cholesky(mu, L);
+    }
