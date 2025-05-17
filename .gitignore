@@ -1,4 +1,30 @@
+# Ignore everything
+*
+
+# But not these files...
+!.gitignore
+!.R
+!.stan
+!.rda
+# etc...
+
+# ...even if they are in subdirectories
+!*/
+
+Data/*
+!Data/*.rda
+
+Rfiles/*
+!Rfiles/*.R
+
+StanFiles/*
+!StanFiles/*.stan
+
+# if the files to be tracked are in subdirectories
+!*/.R
+!*/.sh
+
+# knitr and R markdown default cache directories
+*_cache/
+/cache/
 .Rproj.user
-.Rhistory
-.RData
-.Ruserdata
