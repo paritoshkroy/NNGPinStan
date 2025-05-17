@@ -291,7 +291,9 @@ models for
 ![\boldsymbol{z}](https://latex.codecogs.com/svg.image?%5Cboldsymbol%7Bz%7D "\boldsymbol{z}")
 by limiting the size of the set of parents of each node ([Banerjee
 2017](#ref-banerjee2017high); [Finley et al.
-2019](#ref-finley2019efficient)). For a GP
+2019](#ref-finley2019efficient)).
+
+For a GP
 ![z(\boldsymbol{s})](https://latex.codecogs.com/svg.image?z%28%5Cboldsymbol%7Bs%7D%29 "z(\boldsymbol{s})")
 with mean zero and covariance function
 ![C](https://latex.codecogs.com/svg.image?C "C"), let
@@ -386,6 +388,7 @@ where
 ![d_1 = C\_{\boldsymbol{s}\_i,\boldsymbol{s}\_i}](https://latex.codecogs.com/svg.image?d_1%20%3D%20C_%7B%5Cboldsymbol%7Bs%7D_i%2C%5Cboldsymbol%7Bs%7D_i%7D "d_1 = C_{\boldsymbol{s}_i,\boldsymbol{s}_i}")
 and
 ![d_i = \sigma^2\_{z(\boldsymbol{s}\_i) \mid \boldsymbol{z}\_{\mathcal{N}(\boldsymbol{s})(\boldsymbol{s}\_i)}}\\ i=2,\ldots,n](https://latex.codecogs.com/svg.image?d_i%20%3D%20%5Csigma%5E2_%7Bz%28%5Cboldsymbol%7Bs%7D_i%29%20%5Cmid%20%5Cboldsymbol%7Bz%7D_%7B%5Cmathcal%7BN%7D%28%5Cboldsymbol%7Bs%7D%29%28%5Cboldsymbol%7Bs%7D_i%29%7D%7D%5C%3B%20i%3D2%2C%5Cldots%2Cn "d_i = \sigma^2_{z(\boldsymbol{s}_i) \mid \boldsymbol{z}_{\mathcal{N}(\boldsymbol{s})(\boldsymbol{s}_i)}}\; i=2,\ldots,n").
+
 Therefore, the likelihood in can be written as the following set of
 linear models,
 ![z(\boldsymbol{s}\_1) = 0 + e(\boldsymbol{s}\_1)](https://latex.codecogs.com/svg.image?z%28%5Cboldsymbol%7Bs%7D_1%29%20%3D%200%20%2B%20e%28%5Cboldsymbol%7Bs%7D_1%29 "z(\boldsymbol{s}_1) = 0 + e(\boldsymbol{s}_1)")
@@ -437,6 +440,7 @@ prediction distribution of
 ![z(\boldsymbol{s})](https://latex.codecogs.com/svg.image?z%28%5Cboldsymbol%7Bs%7D%29 "z(\boldsymbol{s})")
 at new locations conditional on
 ![\boldsymbol{z}](https://latex.codecogs.com/svg.image?%5Cboldsymbol%7Bz%7D "\boldsymbol{z}").
+
 For the prediction of the latent process
 ![z(\boldsymbol{s})](https://latex.codecogs.com/svg.image?z%28%5Cboldsymbol%7Bs%7D%29 "z(\boldsymbol{s})")
 at a set of ![n_0](https://latex.codecogs.com/svg.image?n_0 "n_0") new
@@ -479,11 +483,14 @@ hierarchical modeling of a large spatial data using the NNGP is still
 challenging. In particular, when the latent process cannot be
 marginalized in the models and treated as parameters that must be
 sampled. MCMC sampler becomes inefficient due to high-dimensional
-parameter space. To a similar problem Wang and Furrer
-([2019](#ref-wang2019efficient)) showed that non-centered
-parameterization to both location and scale parameters of the latent
-NNGP improves the MCMC efficiency by implementing it in Stan. This
-implies that the model
+parameter space.
+
+To a similar problem Wang and Furrer ([2019](#ref-wang2019efficient))
+showed that non-centered parameterization to both location and scale
+parameters of the latent NNGP improves the MCMC efficiency by
+implementing it in Stan.
+
+This implies that the model
 ![\mathcal{N}\left(z(\boldsymbol{s}\_i) \| \mu\_{z(\boldsymbol{s}\_i) \mid \boldsymbol{z}\_{\mathcal{N}(\boldsymbol{s})(\boldsymbol{s}\_i)}}, \sigma^2\_{z(\boldsymbol{s}\_i) \mid \boldsymbol{z}\_{\mathcal{N}(\boldsymbol{s})(\boldsymbol{s}\_i)}}\right)](https://latex.codecogs.com/svg.image?%5Cmathcal%7BN%7D%5Cleft%28z%28%5Cboldsymbol%7Bs%7D_i%29%20%7C%20%5Cmu_%7Bz%28%5Cboldsymbol%7Bs%7D_i%29%20%5Cmid%20%5Cboldsymbol%7Bz%7D_%7B%5Cmathcal%7BN%7D%28%5Cboldsymbol%7Bs%7D%29%28%5Cboldsymbol%7Bs%7D_i%29%7D%7D%2C%20%5Csigma%5E2_%7Bz%28%5Cboldsymbol%7Bs%7D_i%29%20%5Cmid%20%5Cboldsymbol%7Bz%7D_%7B%5Cmathcal%7BN%7D%28%5Cboldsymbol%7Bs%7D%29%28%5Cboldsymbol%7Bs%7D_i%29%7D%7D%5Cright%29 "\mathcal{N}\left(z(\boldsymbol{s}_i) | \mu_{z(\boldsymbol{s}_i) \mid \boldsymbol{z}_{\mathcal{N}(\boldsymbol{s})(\boldsymbol{s}_i)}}, \sigma^2_{z(\boldsymbol{s}_i) \mid \boldsymbol{z}_{\mathcal{N}(\boldsymbol{s})(\boldsymbol{s}_i)}}\right)")
 in is parameterized as
 ![z(\boldsymbol{s}\_i) \|  z\_{\mathcal{N}(\boldsymbol{s})(\boldsymbol{s}\_i)} = \mu\_{z(\boldsymbol{s}\_i) \mid \boldsymbol{z}\_{\mathcal{N}(\boldsymbol{s})(\boldsymbol{s}\_i)}} + \sigma\_{z(\boldsymbol{s}\_i) \mid \boldsymbol{z}\_{\mathcal{N}(\boldsymbol{s})(\boldsymbol{s}\_i)}} v(\boldsymbol{s}\_i)](https://latex.codecogs.com/svg.image?z%28%5Cboldsymbol%7Bs%7D_i%29%20%7C%20%20z_%7B%5Cmathcal%7BN%7D%28%5Cboldsymbol%7Bs%7D%29%28%5Cboldsymbol%7Bs%7D_i%29%7D%20%3D%20%5Cmu_%7Bz%28%5Cboldsymbol%7Bs%7D_i%29%20%5Cmid%20%5Cboldsymbol%7Bz%7D_%7B%5Cmathcal%7BN%7D%28%5Cboldsymbol%7Bs%7D%29%28%5Cboldsymbol%7Bs%7D_i%29%7D%7D%20%2B%20%5Csigma_%7Bz%28%5Cboldsymbol%7Bs%7D_i%29%20%5Cmid%20%5Cboldsymbol%7Bz%7D_%7B%5Cmathcal%7BN%7D%28%5Cboldsymbol%7Bs%7D%29%28%5Cboldsymbol%7Bs%7D_i%29%7D%7D%20v%28%5Cboldsymbol%7Bs%7D_i%29 "z(\boldsymbol{s}_i) |  z_{\mathcal{N}(\boldsymbol{s})(\boldsymbol{s}_i)} = \mu_{z(\boldsymbol{s}_i) \mid \boldsymbol{z}_{\mathcal{N}(\boldsymbol{s})(\boldsymbol{s}_i)}} + \sigma_{z(\boldsymbol{s}_i) \mid \boldsymbol{z}_{\mathcal{N}(\boldsymbol{s})(\boldsymbol{s}_i)}} v(\boldsymbol{s}_i)")
