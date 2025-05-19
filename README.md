@@ -1,13 +1,20 @@
-Nearest Neighbor GP Models in Stan
+Analysis of Large Geostatistical Data Uisng NNGP in Stan
 ================
 
-- [Gaussian Process](#gaussian-process)
-- [NNGP approximation of a GP](#nngp-approximation-of-a-gp)
-- [References](#references)
+- [1 Geostatistical Data and Gaussian
+  Processes](#1-geostatistical-data-and-gaussian-processes)
+  - [1.1 Modeling Geostatistical Data](#11-modeling-geostatistical-data)
+  - [1.2 Stan implementation](#12-stan-implementation)
+  - [1.3 Marginal model](#13-marginal-model)
+  - [1.4 Vecchia’s approximation and
+    NNGP](#14-vecchias-approximation-and-nngp)
+  - [1.5 References](#15-references)
 
-## Gaussian Process
+# 1 Geostatistical Data and Gaussian Processes
 
-### Inference Procedure
+## 1.1 Modeling Geostatistical Data
+
+### 1.1.1 Inference Procedure
 
 Let
 ![\mathbf{y} = (y(\mathbf{s}\_1),\ldots, y(\mathbf{s}\_n))^\prime](https://latex.codecogs.com/svg.image?%5Cmathbf%7By%7D%20%3D%20%28y%28%5Cmathbf%7Bs%7D_1%29%2C%5Cldots%2C%20y%28%5Cmathbf%7Bs%7D_n%29%29%5E%5Cprime "\mathbf{y} = (y(\mathbf{s}_1),\ldots, y(\mathbf{s}_n))^\prime")
@@ -48,7 +55,11 @@ following Bayes’ theorem, the joint posterior distribution of
 ![\boldsymbol{\Phi} = \\\boldsymbol{\theta}, \sigma, \ell, \tau\\](https://latex.codecogs.com/svg.image?%5Cboldsymbol%7B%5CPhi%7D%20%3D%20%5C%7B%5Cboldsymbol%7B%5Ctheta%7D%2C%20%5Csigma%2C%20%5Cell%2C%20%5Ctau%5C%7D "\boldsymbol{\Phi} = \{\boldsymbol{\theta}, \sigma, \ell, \tau\}")
 is proportional to
 
-![\pi(\boldsymbol{\Phi} \mid \mathbf{y}) \propto \mathcal{N}\left(\mathbf{y} \mid \mathbf{X}\boldsymbol{\theta}, \mathbf{V}\right) \\ \pi(\boldsymbol{\Phi}),](https://latex.codecogs.com/svg.image?%5Cpi%28%5Cboldsymbol%7B%5CPhi%7D%20%5Cmid%20%5Cmathbf%7By%7D%29%20%5Cpropto%20%5Cmathcal%7BN%7D%5Cleft%28%5Cmathbf%7By%7D%20%5Cmid%20%5Cmathbf%7BX%7D%5Cboldsymbol%7B%5Ctheta%7D%2C%20%5Cmathbf%7BV%7D%5Cright%29%20%5C%3B%20%5Cpi%28%5Cboldsymbol%7B%5CPhi%7D%29%2C "\pi(\boldsymbol{\Phi} \mid \mathbf{y}) \propto \mathcal{N}\left(\mathbf{y} \mid \mathbf{X}\boldsymbol{\theta}, \mathbf{V}\right) \; \pi(\boldsymbol{\Phi}),")
+![\begin{aligned}
+\\\pi(\boldsymbol{\Phi} \mid \mathbf{y}) \propto \mathcal{N}\left(\mathbf{y} \mid \mathbf{X}\boldsymbol{\theta}, \mathbf{V}\right) \\ \pi(\boldsymbol{\Phi}),
+end{aligned}](https://latex.codecogs.com/svg.image?%5Cbegin%7Baligned%7D%0A%5C%5B%5Cpi%28%5Cboldsymbol%7B%5CPhi%7D%20%5Cmid%20%5Cmathbf%7By%7D%29%20%5Cpropto%20%5Cmathcal%7BN%7D%5Cleft%28%5Cmathbf%7By%7D%20%5Cmid%20%5Cmathbf%7BX%7D%5Cboldsymbol%7B%5Ctheta%7D%2C%20%5Cmathbf%7BV%7D%5Cright%29%20%5C%3B%20%5Cpi%28%5Cboldsymbol%7B%5CPhi%7D%29%2C%0Aend%7Baligned%7D "\begin{aligned}
+\[\pi(\boldsymbol{\Phi} \mid \mathbf{y}) \propto \mathcal{N}\left(\mathbf{y} \mid \mathbf{X}\boldsymbol{\theta}, \mathbf{V}\right) \; \pi(\boldsymbol{\Phi}),
+end{aligned}")
 
 where
 ![\mathbf{V} = \sigma^2 \mathbf{B} + \tau^2\mathbf{I}](https://latex.codecogs.com/svg.image?%5Cmathbf%7BV%7D%20%3D%20%5Csigma%5E2%20%5Cmathbf%7BB%7D%20%2B%20%5Ctau%5E2%5Cmathbf%7BI%7D "\mathbf{V} = \sigma^2 \mathbf{B} + \tau^2\mathbf{I}")
@@ -66,7 +77,9 @@ from the posterior distribution, which can be used to estimate various
 summary statistics. Once samples from the posterior distribution are
 available, predictions to unobserved locations follow straightforwardly.
 
-### Spatial Prediction
+### 1.1.2 Marginalization of Latent Process
+
+### 1.1.3 Spatial Interpolation
 
 To predict the responses
 ![\mathbf{y}^{\star} = (y(\mathbf{s}\_1^\star),\ldots,y(\mathbf{s}\_{n^\star}^\star))^\prime](https://latex.codecogs.com/svg.image?%5Cmathbf%7By%7D%5E%7B%5Cstar%7D%20%3D%20%28y%28%5Cmathbf%7Bs%7D_1%5E%5Cstar%29%2C%5Cldots%2Cy%28%5Cmathbf%7Bs%7D_%7Bn%5E%5Cstar%7D%5E%5Cstar%29%29%5E%5Cprime "\mathbf{y}^{\star} = (y(\mathbf{s}_1^\star),\ldots,y(\mathbf{s}_{n^\star}^\star))^\prime")
@@ -142,7 +155,7 @@ the parameters are obtained, estimates for
 ![\mathbf{z}](https://latex.codecogs.com/svg.image?%5Cmathbf%7Bz%7D "\mathbf{z}")
 can be recovered through composition sampling techniques.
 
-### Recovery of the Latent Component
+### 1.1.4 Recovery of the Latent Component
 
 One might be interested in the posterior distribution of the latent
 spatial component
@@ -228,7 +241,9 @@ multivariate normal with mean
 and variance
 ![\text{Var}\[\mathbf{z}^\star \mid \mathbf{z}\] = \sigma^2 (\mathbf{B}^\star - \mathbf{B}^{\text{pred-to-obs}} \mathbf{B}^{-1} \mathbf{B}^{\text{obs-to-pred}})](https://latex.codecogs.com/svg.image?%5Ctext%7BVar%7D%5B%5Cmathbf%7Bz%7D%5E%5Cstar%20%5Cmid%20%5Cmathbf%7Bz%7D%5D%20%3D%20%5Csigma%5E2%20%28%5Cmathbf%7BB%7D%5E%5Cstar%20-%20%5Cmathbf%7BB%7D%5E%7B%5Ctext%7Bpred-to-obs%7D%7D%20%5Cmathbf%7BB%7D%5E%7B-1%7D%20%5Cmathbf%7BB%7D%5E%7B%5Ctext%7Bobs-to-pred%7D%7D%29 "\text{Var}[\mathbf{z}^\star \mid \mathbf{z}] = \sigma^2 (\mathbf{B}^\star - \mathbf{B}^{\text{pred-to-obs}} \mathbf{B}^{-1} \mathbf{B}^{\text{obs-to-pred}})").
 
-### Stan implementation of marginal model
+## 1.2 Stan implementation
+
+## 1.3 Marginal model
 
     data {
       int<lower=0> n;
@@ -274,9 +289,9 @@ and variance
       y ~ multi_normal_cholesky(mu, L);
     }
 
-### Computational Complexity of the Inference of GP Model
+### 1.3.1 Computational complexity in analysing large datasets
 
-## NNGP approximation of a GP
+## 1.4 Vecchia’s approximation and NNGP
 
 Datta et al. ([2016](#ref-datta2016hierarchical)) developed the NNGP as
 a sparse approximation of to a full GP. It generalizes the idea of
@@ -287,7 +302,7 @@ of the likelihood of realizations of the process
 where the nearest neighbors set of
 ![\mathbf{s}](https://latex.codecogs.com/svg.image?%5Cmathbf%7Bs%7D "\mathbf{s}")
 is defined based upon the Euclidean distance ([Datta
-2021](#ref-datta2021sparse)). Both the nearest neighbor approximations
+2022](#ref-datta2022nearest)). Both the nearest neighbor approximations
 builds upon the idea that the joint distribution for a random vector
 ![\boldsymbol{z}](https://latex.codecogs.com/svg.image?%5Cboldsymbol%7Bz%7D "\boldsymbol{z}")
 can be looked upon as a directed acyclic graph (DAG) to construct sparse
@@ -440,7 +455,7 @@ corresponds to a generative multivariate Gaussian model
 ![\boldsymbol{z} \sim \mathcal{N}\left(\mathbf{0},\widetilde{\boldsymbol{C}}\right)](https://latex.codecogs.com/svg.image?%5Cboldsymbol%7Bz%7D%20%5Csim%20%5Cmathcal%7BN%7D%5Cleft%28%5Cmathbf%7B0%7D%2C%5Cwidetilde%7B%5Cboldsymbol%7BC%7D%7D%5Cright%29 "\boldsymbol{z} \sim \mathcal{N}\left(\mathbf{0},\widetilde{\boldsymbol{C}}\right)")
 for the process realizations, where
 ![\widetilde{\boldsymbol{C}} = (\mathbf{I}-\boldsymbol{A})^{-1}\boldsymbol{D}(\mathbf{I}-\boldsymbol{A})^{-\top}](https://latex.codecogs.com/svg.image?%5Cwidetilde%7B%5Cboldsymbol%7BC%7D%7D%20%3D%20%28%5Cmathbf%7BI%7D-%5Cboldsymbol%7BA%7D%29%5E%7B-1%7D%5Cboldsymbol%7BD%7D%28%5Cmathbf%7BI%7D-%5Cboldsymbol%7BA%7D%29%5E%7B-%5Ctop%7D "\widetilde{\boldsymbol{C}} = (\mathbf{I}-\boldsymbol{A})^{-1}\boldsymbol{D}(\mathbf{I}-\boldsymbol{A})^{-\top}")
-([Datta 2021](#ref-datta2021sparse)). Datta et al.
+([Datta 2022](#ref-datta2022nearest)). Datta et al.
 ([2016](#ref-datta2016hierarchical)) shows that this is a valid
 approximation of the likelihood corresponding to the GP model
 ![z(\mathbf{s})](https://latex.codecogs.com/svg.image?z%28%5Cmathbf%7Bs%7D%29 "z(\mathbf{s})")
@@ -509,7 +524,141 @@ where
 ![v(\mathbf{s}\_i)](https://latex.codecogs.com/svg.image?v%28%5Cmathbf%7Bs%7D_i%29 "v(\mathbf{s}_i)")
 is independent Gaussian noise with mean zero and variance one.
 
-## References
+One main interest in spatial data analysis is obtaining an estimated
+process surface through pointwise prediction. Suppose that a vector of
+![p](https://latex.codecogs.com/svg.image?p "p") covariates values
+![\mathbf{x}(\mathbf{s}\_0)](https://latex.codecogs.com/svg.image?%5Cmathbf%7Bx%7D%28%5Cmathbf%7Bs%7D_0%29 "\mathbf{x}(\mathbf{s}_0)")
+at a generic prediction location
+![\mathbf{s}\_0 \in \mathcal{D}](https://latex.codecogs.com/svg.image?%5Cmathbf%7Bs%7D_0%20%5Cin%20%5Cmathcal%7BD%7D "\mathbf{s}_0 \in \mathcal{D}")
+is available. Following model , the posterior predictive distribution of
+![y(\mathbf{s})](https://latex.codecogs.com/svg.image?y%28%5Cmathbf%7Bs%7D%29 "y(\mathbf{s})")
+at
+![\mathbf{s}\_0](https://latex.codecogs.com/svg.image?%5Cmathbf%7Bs%7D_0 "\mathbf{s}_0")
+is given by
+
+![\begin{multline}
+\pi(y(\mathbf{s}\_0) \mid \mathbf{y}) = \int \mathcal{N}\left(y(\mathbf{s}\_0) \mid \mu\_{y(\mathbf{s}\_0) \mid \mathbf{y}}, \tau^2 \right) \\ \pi(z_1(\mathbf{s}\_0) \mid \mathbf{z}\_1, \sigma_1, \ell_1) \\ \pi(z_2(\mathbf{s}\_0) \mid \mathbf{z}\_2, \sigma_2, \ell_2) \\
+\pi(\boldsymbol{\Theta}, \mathbf{z}\_1, \mathbf{z}\_2 \mid \mathbf{y}) \\ dz_1(\mathbf{s}\_0)\\ dz_2(\mathbf{s}\_0)\\ d\mathbf{z}\_1 \\ d\mathbf{z}\_2 \\ d\boldsymbol{\Theta},
+\end{multline}](https://latex.codecogs.com/svg.image?%5Cbegin%7Bmultline%7D%0A%5Cpi%28y%28%5Cmathbf%7Bs%7D_0%29%20%5Cmid%20%5Cmathbf%7By%7D%29%20%3D%20%5Cint%20%5Cmathcal%7BN%7D%5Cleft%28y%28%5Cmathbf%7Bs%7D_0%29%20%5Cmid%20%5Cmu_%7By%28%5Cmathbf%7Bs%7D_0%29%20%5Cmid%20%5Cmathbf%7By%7D%7D%2C%20%5Ctau%5E2%20%5Cright%29%20%5C%3B%20%5Cpi%28z_1%28%5Cmathbf%7Bs%7D_0%29%20%5Cmid%20%5Cmathbf%7Bz%7D_1%2C%20%5Csigma_1%2C%20%5Cell_1%29%20%5C%3B%20%5Cpi%28z_2%28%5Cmathbf%7Bs%7D_0%29%20%5Cmid%20%5Cmathbf%7Bz%7D_2%2C%20%5Csigma_2%2C%20%5Cell_2%29%20%5C%5C%0A%5Cpi%28%5Cboldsymbol%7B%5CTheta%7D%2C%20%5Cmathbf%7Bz%7D_1%2C%20%5Cmathbf%7Bz%7D_2%20%5Cmid%20%5Cmathbf%7By%7D%29%20%5C%3B%20dz_1%28%5Cmathbf%7Bs%7D_0%29%5C%3B%20dz_2%28%5Cmathbf%7Bs%7D_0%29%5C%3B%20d%5Cmathbf%7Bz%7D_1%20%5C%3B%20d%5Cmathbf%7Bz%7D_2%20%5C%3B%20d%5Cboldsymbol%7B%5CTheta%7D%2C%0A%5Cend%7Bmultline%7D "\begin{multline}
+\pi(y(\mathbf{s}_0) \mid \mathbf{y}) = \int \mathcal{N}\left(y(\mathbf{s}_0) \mid \mu_{y(\mathbf{s}_0) \mid \mathbf{y}}, \tau^2 \right) \; \pi(z_1(\mathbf{s}_0) \mid \mathbf{z}_1, \sigma_1, \ell_1) \; \pi(z_2(\mathbf{s}_0) \mid \mathbf{z}_2, \sigma_2, \ell_2) \\
+\pi(\boldsymbol{\Theta}, \mathbf{z}_1, \mathbf{z}_2 \mid \mathbf{y}) \; dz_1(\mathbf{s}_0)\; dz_2(\mathbf{s}_0)\; d\mathbf{z}_1 \; d\mathbf{z}_2 \; d\boldsymbol{\Theta},
+\end{multline}")
+
+where
+![\mu\_{y(\mathbf{s}\_0)\mid\mathbf{y}} = \mathbf{x}'(\mathbf{s}\_0)\boldsymbol{\theta} + \gamma \exp\\z_1(\mathbf{s}\_0)\\ + z_2(\mathbf{s}\_0)](https://latex.codecogs.com/svg.image?%5Cmu_%7By%28%5Cmathbf%7Bs%7D_0%29%5Cmid%5Cmathbf%7By%7D%7D%20%3D%20%5Cmathbf%7Bx%7D%27%28%5Cmathbf%7Bs%7D_0%29%5Cboldsymbol%7B%5Ctheta%7D%20%2B%20%5Cgamma%20%5Cexp%5C%7Bz_1%28%5Cmathbf%7Bs%7D_0%29%5C%7D%20%2B%20z_2%28%5Cmathbf%7Bs%7D_0%29 "\mu_{y(\mathbf{s}_0)\mid\mathbf{y}} = \mathbf{x}'(\mathbf{s}_0)\boldsymbol{\theta} + \gamma \exp\{z_1(\mathbf{s}_0)\} + z_2(\mathbf{s}_0)")
+and
+![\boldsymbol{\Theta} = \\\boldsymbol{\theta}, \gamma, \sigma_1, \ell_1, \sigma_2, \ell_2, \tau\\](https://latex.codecogs.com/svg.image?%5Cboldsymbol%7B%5CTheta%7D%20%3D%20%5C%7B%5Cboldsymbol%7B%5Ctheta%7D%2C%20%5Cgamma%2C%20%5Csigma_1%2C%20%5Cell_1%2C%20%5Csigma_2%2C%20%5Cell_2%2C%20%5Ctau%5C%7D "\boldsymbol{\Theta} = \{\boldsymbol{\theta}, \gamma, \sigma_1, \ell_1, \sigma_2, \ell_2, \tau\}").
+The integral in does not have a closed form; therefore, realizations
+from the posterior predictive distribution of
+![y(\mathbf{s}\_0)](https://latex.codecogs.com/svg.image?y%28%5Cmathbf%7Bs%7D_0%29 "y(\mathbf{s}_0)")
+are obtained using composition sampling. For each set of posterior
+samples of
+![\\\boldsymbol{\Theta}, \mathbf{z}\_1, \mathbf{z}\_2\\](https://latex.codecogs.com/svg.image?%5C%7B%5Cboldsymbol%7B%5CTheta%7D%2C%20%5Cmathbf%7Bz%7D_1%2C%20%5Cmathbf%7Bz%7D_2%5C%7D "\{\boldsymbol{\Theta}, \mathbf{z}_1, \mathbf{z}_2\}"),
+a sample from the posterior predictive can be obtained by sampling from
+![\pi(z_k(\mathbf{s}\_0) \mid \mathbf{z}\_k, \sigma_k, \ell_k)](https://latex.codecogs.com/svg.image?%5Cpi%28z_k%28%5Cmathbf%7Bs%7D_0%29%20%5Cmid%20%5Cmathbf%7Bz%7D_k%2C%20%5Csigma_k%2C%20%5Cell_k%29 "\pi(z_k(\mathbf{s}_0) \mid \mathbf{z}_k, \sigma_k, \ell_k)")
+for
+![k = 1, 2](https://latex.codecogs.com/svg.image?k%20%3D%201%2C%202 "k = 1, 2"),
+and
+![\mathcal{N}\left(y(\mathbf{s}\_0) \mid \mu\_{y(\mathbf{s}\_0)\mid\mathbf{y}}, \tau^2 \right)](https://latex.codecogs.com/svg.image?%5Cmathcal%7BN%7D%5Cleft%28y%28%5Cmathbf%7Bs%7D_0%29%20%5Cmid%20%5Cmu_%7By%28%5Cmathbf%7Bs%7D_0%29%5Cmid%5Cmathbf%7By%7D%7D%2C%20%5Ctau%5E2%20%5Cright%29 "\mathcal{N}\left(y(\mathbf{s}_0) \mid \mu_{y(\mathbf{s}_0)\mid\mathbf{y}}, \tau^2 \right)").
+Note that once the value of
+![z_1(\mathbf{s}\_0)](https://latex.codecogs.com/svg.image?z_1%28%5Cmathbf%7Bs%7D_0%29 "z_1(\mathbf{s}_0)")
+and
+![z_2(\mathbf{s}\_0)](https://latex.codecogs.com/svg.image?z_2%28%5Cmathbf%7Bs%7D_0%29 "z_2(\mathbf{s}_0)")
+are available, the predicted value of
+![y(\mathbf{s}\_0)](https://latex.codecogs.com/svg.image?y%28%5Cmathbf%7Bs%7D_0%29 "y(\mathbf{s}_0)")
+is easily sampled from the univariate distribution
+![\mathcal{N}\left(y(\mathbf{s}\_0) \mid \mu\_{y(\mathbf{s}\_0)\mid\mathbf{y}}, \tau^2 \right)](https://latex.codecogs.com/svg.image?%5Cmathcal%7BN%7D%5Cleft%28y%28%5Cmathbf%7Bs%7D_0%29%20%5Cmid%20%5Cmu_%7By%28%5Cmathbf%7Bs%7D_0%29%5Cmid%5Cmathbf%7By%7D%7D%2C%20%5Ctau%5E2%20%5Cright%29 "\mathcal{N}\left(y(\mathbf{s}_0) \mid \mu_{y(\mathbf{s}_0)\mid\mathbf{y}}, \tau^2 \right)").
+
+While following model, the posterior predictive distribution of
+![y(\mathbf{s}\_0)](https://latex.codecogs.com/svg.image?y%28%5Cmathbf%7Bs%7D_0%29 "y(\mathbf{s}_0)")
+at any unobserved location
+![\mathbf{s}\_0 \in \mathcal{D}](https://latex.codecogs.com/svg.image?%5Cmathbf%7Bs%7D_0%20%5Cin%20%5Cmathcal%7BD%7D "\mathbf{s}_0 \in \mathcal{D}")
+is given by
+
+![\begin{aligned}
+\pi(y(\mathbf{s}\_0) \mid \mathbf{y}) &= \int \mathcal{N}\left(y(\mathbf{s}\_0) \mid \mu\_{y(\mathbf{s}\_0)\mid \mathbf{y}}, \sigma^2\_{y(\mathbf{s}\_0) \mid \mathbf{y}} \right)\\ \pi(z_1(\mathbf{s}\_0) \mid \mathbf{z}\_1, \sigma_1, \ell_1)\\
+& \pi(\boldsymbol{\Theta}, \mathbf{z}\_1 \mid \mathbf{y}) \\ dz_1(\mathbf{s}\_0)\\ d\mathbf{z}\_1 \\ d\boldsymbol{\Theta},
+\end{aligned}](https://latex.codecogs.com/svg.image?%5Cbegin%7Baligned%7D%0A%5Cpi%28y%28%5Cmathbf%7Bs%7D_0%29%20%5Cmid%20%5Cmathbf%7By%7D%29%20%26%3D%20%5Cint%20%5Cmathcal%7BN%7D%5Cleft%28y%28%5Cmathbf%7Bs%7D_0%29%20%5Cmid%20%5Cmu_%7By%28%5Cmathbf%7Bs%7D_0%29%5Cmid%20%5Cmathbf%7By%7D%7D%2C%20%5Csigma%5E2_%7By%28%5Cmathbf%7Bs%7D_0%29%20%5Cmid%20%5Cmathbf%7By%7D%7D%20%5Cright%29%5C%3B%20%5Cpi%28z_1%28%5Cmathbf%7Bs%7D_0%29%20%5Cmid%20%5Cmathbf%7Bz%7D_1%2C%20%5Csigma_1%2C%20%5Cell_1%29%5C%5C%0A%26%20%5Cpi%28%5Cboldsymbol%7B%5CTheta%7D%2C%20%5Cmathbf%7Bz%7D_1%20%5Cmid%20%5Cmathbf%7By%7D%29%20%5C%3B%20dz_1%28%5Cmathbf%7Bs%7D_0%29%5C%3B%20d%5Cmathbf%7Bz%7D_1%20%5C%3B%20d%5Cboldsymbol%7B%5CTheta%7D%2C%0A%5Cend%7Baligned%7D "\begin{aligned}
+\pi(y(\mathbf{s}_0) \mid \mathbf{y}) &= \int \mathcal{N}\left(y(\mathbf{s}_0) \mid \mu_{y(\mathbf{s}_0)\mid \mathbf{y}}, \sigma^2_{y(\mathbf{s}_0) \mid \mathbf{y}} \right)\; \pi(z_1(\mathbf{s}_0) \mid \mathbf{z}_1, \sigma_1, \ell_1)\\
+& \pi(\boldsymbol{\Theta}, \mathbf{z}_1 \mid \mathbf{y}) \; dz_1(\mathbf{s}_0)\; d\mathbf{z}_1 \; d\boldsymbol{\Theta},
+\end{aligned}")
+
+which also does not have a closed form and composition sampling is used
+to obtain samples from
+![\pi(y(\mathbf{s}\_0) \mid \mathbf{y})](https://latex.codecogs.com/svg.image?%5Cpi%28y%28%5Cmathbf%7Bs%7D_0%29%20%5Cmid%20%5Cmathbf%7By%7D%29 "\pi(y(\mathbf{s}_0) \mid \mathbf{y})").
+It requires sampling from
+![\pi(z_1(\mathbf{s}\_0) \mid \mathbf{z}\_1, \sigma_1, \ell_1)](https://latex.codecogs.com/svg.image?%5Cpi%28z_1%28%5Cmathbf%7Bs%7D_0%29%20%5Cmid%20%5Cmathbf%7Bz%7D_1%2C%20%5Csigma_1%2C%20%5Cell_1%29 "\pi(z_1(\mathbf{s}_0) \mid \mathbf{z}_1, \sigma_1, \ell_1)")
+at first and then from
+![\mathcal{N}\bigl(y(\mathbf{s}\_0) \mid \mu\_{y(\mathbf{s}\_0)\mid \mathbf{y}}, \sigma^2\_{y(\mathbf{s}\_0) \mid \mathbf{y}}\bigr)](https://latex.codecogs.com/svg.image?%5Cmathcal%7BN%7D%5Cbigl%28y%28%5Cmathbf%7Bs%7D_0%29%20%5Cmid%20%5Cmu_%7By%28%5Cmathbf%7Bs%7D_0%29%5Cmid%20%5Cmathbf%7By%7D%7D%2C%20%5Csigma%5E2_%7By%28%5Cmathbf%7Bs%7D_0%29%20%5Cmid%20%5Cmathbf%7By%7D%7D%5Cbigr%29 "\mathcal{N}\bigl(y(\mathbf{s}_0) \mid \mu_{y(\mathbf{s}_0)\mid \mathbf{y}}, \sigma^2_{y(\mathbf{s}_0) \mid \mathbf{y}}\bigr)")
+for each posterior samples of
+![\\\boldsymbol{\Theta}, \mathbf{z}\_1\\](https://latex.codecogs.com/svg.image?%5C%7B%5Cboldsymbol%7B%5CTheta%7D%2C%20%5Cmathbf%7Bz%7D_1%5C%7D "\{\boldsymbol{\Theta}, \mathbf{z}_1\}").
+However, with known value of
+![z_1(\mathbf{s}\_0)](https://latex.codecogs.com/svg.image?z_1%28%5Cmathbf%7Bs%7D_0%29 "z_1(\mathbf{s}_0)"),
+sampling from the distribution
+![\mathcal{N}\bigl(y(\mathbf{s}\_0) \mid \mu\_{y(\mathbf{s}\_0)\mid \mathbf{y}}, \sigma^2\_{y(\mathbf{s}\_0) \mid \mathbf{y}}\bigr)](https://latex.codecogs.com/svg.image?%5Cmathcal%7BN%7D%5Cbigl%28y%28%5Cmathbf%7Bs%7D_0%29%20%5Cmid%20%5Cmu_%7By%28%5Cmathbf%7Bs%7D_0%29%5Cmid%20%5Cmathbf%7By%7D%7D%2C%20%5Csigma%5E2_%7By%28%5Cmathbf%7Bs%7D_0%29%20%5Cmid%20%5Cmathbf%7By%7D%7D%5Cbigr%29 "\mathcal{N}\bigl(y(\mathbf{s}_0) \mid \mu_{y(\mathbf{s}_0)\mid \mathbf{y}}, \sigma^2_{y(\mathbf{s}_0) \mid \mathbf{y}}\bigr)")
+is computationally expensive. As this distribution is the univariate
+conditional distribution of a multivariate normal distribution of
+dimension
+![(n+1)](https://latex.codecogs.com/svg.image?%28n%2B1%29 "(n+1)"),
+computing conditional mean
+![\mu\_{y(\mathbf{s}\_0) \mid \mathbf{y}}](https://latex.codecogs.com/svg.image?%5Cmu_%7By%28%5Cmathbf%7Bs%7D_0%29%20%5Cmid%20%5Cmathbf%7By%7D%7D "\mu_{y(\mathbf{s}_0) \mid \mathbf{y}}")
+and variance
+![\sigma^2\_{y(\mathbf{s}\_0) \mid \mathbf{y}}](https://latex.codecogs.com/svg.image?%5Csigma%5E2_%7By%28%5Cmathbf%7Bs%7D_0%29%20%5Cmid%20%5Cmathbf%7By%7D%7D "\sigma^2_{y(\mathbf{s}_0) \mid \mathbf{y}}")
+involves expensive matrix calculations. This can be avoided using
+Vecchia’s NN method for approximating the density of
+![\mathbf{y}](https://latex.codecogs.com/svg.image?%5Cmathbf%7By%7D "\mathbf{y}"),
+in which the conditional mean and variance are approximated,
+respectively, as
+![\mu^{\text{NN}}\_{y(\mathbf{s}\_0)\mid \mathbf{y}} = \mathbf{x}(\mathbf{s}\_0)'\boldsymbol{\theta} + \gamma \exp\left\\z_1(\mathbf{s}\_0)\right\\ + \mathbf{c}\_{2,\mathbf{s}\_0,\mathbb{N}(\mathbf{s}\_0)} (\mathbf{C}\_{2,\mathbb{N}(\mathbf{s}\_0)} + (\tau^2/\sigma_2^2)\mathbf{I})^{-1}(\mathbf{y}\_{\mathbb{N}(\mathbf{s}\_0)} - \mathbf{X}\_{\mathbb{N}(\mathbf{s}\_0)}\boldsymbol{\theta} - \gamma\\\exp\\\mathbf{z}\_{1,\mathbb{N}(\mathbf{s}\_0)}\\)](https://latex.codecogs.com/svg.image?%5Cmu%5E%7B%5Ctext%7BNN%7D%7D_%7By%28%5Cmathbf%7Bs%7D_0%29%5Cmid%20%5Cmathbf%7By%7D%7D%20%3D%20%5Cmathbf%7Bx%7D%28%5Cmathbf%7Bs%7D_0%29%27%5Cboldsymbol%7B%5Ctheta%7D%20%2B%20%5Cgamma%20%5Cexp%5Cleft%5C%7Bz_1%28%5Cmathbf%7Bs%7D_0%29%5Cright%5C%7D%20%2B%20%5Cmathbf%7Bc%7D_%7B2%2C%5Cmathbf%7Bs%7D_0%2C%5Cmathbb%7BN%7D%28%5Cmathbf%7Bs%7D_0%29%7D%20%28%5Cmathbf%7BC%7D_%7B2%2C%5Cmathbb%7BN%7D%28%5Cmathbf%7Bs%7D_0%29%7D%20%2B%20%28%5Ctau%5E2%2F%5Csigma_2%5E2%29%5Cmathbf%7BI%7D%29%5E%7B-1%7D%28%5Cmathbf%7By%7D_%7B%5Cmathbb%7BN%7D%28%5Cmathbf%7Bs%7D_0%29%7D%20-%20%5Cmathbf%7BX%7D_%7B%5Cmathbb%7BN%7D%28%5Cmathbf%7Bs%7D_0%29%7D%5Cboldsymbol%7B%5Ctheta%7D%20-%20%5Cgamma%5C%2C%5Cexp%5C%7B%5Cmathbf%7Bz%7D_%7B1%2C%5Cmathbb%7BN%7D%28%5Cmathbf%7Bs%7D_0%29%7D%5C%7D%29 "\mu^{\text{NN}}_{y(\mathbf{s}_0)\mid \mathbf{y}} = \mathbf{x}(\mathbf{s}_0)'\boldsymbol{\theta} + \gamma \exp\left\{z_1(\mathbf{s}_0)\right\} + \mathbf{c}_{2,\mathbf{s}_0,\mathbb{N}(\mathbf{s}_0)} (\mathbf{C}_{2,\mathbb{N}(\mathbf{s}_0)} + (\tau^2/\sigma_2^2)\mathbf{I})^{-1}(\mathbf{y}_{\mathbb{N}(\mathbf{s}_0)} - \mathbf{X}_{\mathbb{N}(\mathbf{s}_0)}\boldsymbol{\theta} - \gamma\,\exp\{\mathbf{z}_{1,\mathbb{N}(\mathbf{s}_0)}\})")
+and
+![\sigma^{2, \text{NN}}\_{y(\mathbf{s}\_0) \mid \mathbf{y}} = \sigma_2^2\[1 + (\tau^2/\sigma_2^2) - \mathbf{c}\_{2,\mathbf{s}\_0,\mathbb{N}(\mathbf{s}\_0)}' (\mathbf{C}\_{2,\mathbb{N}(\mathbf{s}\_0)}^{-1} + (\tau^2/\sigma_2^2)\mathbf{I})^{-1}\mathbf{c}\_{2,\mathbf{s}\_0,\mathbb{N}(\mathbf{s}\_0)}\]](https://latex.codecogs.com/svg.image?%5Csigma%5E%7B2%2C%20%5Ctext%7BNN%7D%7D_%7By%28%5Cmathbf%7Bs%7D_0%29%20%5Cmid%20%5Cmathbf%7By%7D%7D%20%3D%20%5Csigma_2%5E2%5B1%20%2B%20%28%5Ctau%5E2%2F%5Csigma_2%5E2%29%20-%20%5Cmathbf%7Bc%7D_%7B2%2C%5Cmathbf%7Bs%7D_0%2C%5Cmathbb%7BN%7D%28%5Cmathbf%7Bs%7D_0%29%7D%27%20%28%5Cmathbf%7BC%7D_%7B2%2C%5Cmathbb%7BN%7D%28%5Cmathbf%7Bs%7D_0%29%7D%5E%7B-1%7D%20%2B%20%28%5Ctau%5E2%2F%5Csigma_2%5E2%29%5Cmathbf%7BI%7D%29%5E%7B-1%7D%5Cmathbf%7Bc%7D_%7B2%2C%5Cmathbf%7Bs%7D_0%2C%5Cmathbb%7BN%7D%28%5Cmathbf%7Bs%7D_0%29%7D%5D "\sigma^{2, \text{NN}}_{y(\mathbf{s}_0) \mid \mathbf{y}} = \sigma_2^2[1 + (\tau^2/\sigma_2^2) - \mathbf{c}_{2,\mathbf{s}_0,\mathbb{N}(\mathbf{s}_0)}' (\mathbf{C}_{2,\mathbb{N}(\mathbf{s}_0)}^{-1} + (\tau^2/\sigma_2^2)\mathbf{I})^{-1}\mathbf{c}_{2,\mathbf{s}_0,\mathbb{N}(\mathbf{s}_0)}]"),
+where
+![\mathbb{N}(\mathbf{s}\_{0})](https://latex.codecogs.com/svg.image?%5Cmathbb%7BN%7D%28%5Cmathbf%7Bs%7D_%7B0%7D%29 "\mathbb{N}(\mathbf{s}_{0})")
+denotes the ![m](https://latex.codecogs.com/svg.image?m "m") nearest
+neighbors of
+![\mathbf{s}\_0](https://latex.codecogs.com/svg.image?%5Cmathbf%7Bs%7D_0 "\mathbf{s}_0")
+in the observed locations
+![\\\mathbf{s}\_1,\ldots,\mathbf{s}\_n\\](https://latex.codecogs.com/svg.image?%5C%7B%5Cmathbf%7Bs%7D_1%2C%5Cldots%2C%5Cmathbf%7Bs%7D_n%5C%7D "\{\mathbf{s}_1,\ldots,\mathbf{s}_n\}"),
+![\mathbf{y}\_{\mathbb{N}(\mathbf{s}\_0)}](https://latex.codecogs.com/svg.image?%5Cmathbf%7By%7D_%7B%5Cmathbb%7BN%7D%28%5Cmathbf%7Bs%7D_0%29%7D "\mathbf{y}_{\mathbb{N}(\mathbf{s}_0)}")
+is a vector formed by stacking
+![y(\mathbf{s}\_i)](https://latex.codecogs.com/svg.image?y%28%5Cmathbf%7Bs%7D_i%29 "y(\mathbf{s}_i)")
+for
+![\mathbf{s}\_i \in \mathbb{N}(\mathbf{s}\_0)](https://latex.codecogs.com/svg.image?%5Cmathbf%7Bs%7D_i%20%5Cin%20%5Cmathbb%7BN%7D%28%5Cmathbf%7Bs%7D_0%29 "\mathbf{s}_i \in \mathbb{N}(\mathbf{s}_0)"),
+![\mathbf{X}\_{\mathbb{N}(\mathbf{s}\_0)}](https://latex.codecogs.com/svg.image?%5Cmathbf%7BX%7D_%7B%5Cmathbb%7BN%7D%28%5Cmathbf%7Bs%7D_0%29%7D "\mathbf{X}_{\mathbb{N}(\mathbf{s}_0)}")
+is the design matrix corresponding to
+![\mathbf{y}\_{\mathbb{N}(\mathbf{s}\_0)}](https://latex.codecogs.com/svg.image?%5Cmathbf%7By%7D_%7B%5Cmathbb%7BN%7D%28%5Cmathbf%7Bs%7D_0%29%7D "\mathbf{y}_{\mathbb{N}(\mathbf{s}_0)}").
+With
+![k = 1, 2](https://latex.codecogs.com/svg.image?k%20%3D%201%2C%202 "k = 1, 2"),
+![\mathbf{z}\_{k,\mathbb{N}(\mathbf{s}\_0)}](https://latex.codecogs.com/svg.image?%5Cmathbf%7Bz%7D_%7Bk%2C%5Cmathbb%7BN%7D%28%5Cmathbf%7Bs%7D_0%29%7D "\mathbf{z}_{k,\mathbb{N}(\mathbf{s}_0)}")
+is a vector formed by stacking
+![z_k(\mathbf{s}\_i)](https://latex.codecogs.com/svg.image?z_k%28%5Cmathbf%7Bs%7D_i%29 "z_k(\mathbf{s}_i)")
+where
+![\mathbf{s}\_i \in \mathbb{N}(\mathbf{s}\_0)](https://latex.codecogs.com/svg.image?%5Cmathbf%7Bs%7D_i%20%5Cin%20%5Cmathbb%7BN%7D%28%5Cmathbf%7Bs%7D_0%29 "\mathbf{s}_i \in \mathbb{N}(\mathbf{s}_0)"),
+![\mathbf{C}\_{k,\mathbb{N}(\mathbf{s}\_0)}](https://latex.codecogs.com/svg.image?%5Cmathbf%7BC%7D_%7Bk%2C%5Cmathbb%7BN%7D%28%5Cmathbf%7Bs%7D_0%29%7D "\mathbf{C}_{k,\mathbb{N}(\mathbf{s}_0)}")
+is the correlation matrix obtained by evaluating the correlation
+function
+![C(\cdot, \ell_k)](https://latex.codecogs.com/svg.image?C%28%5Ccdot%2C%20%5Cell_k%29 "C(\cdot, \ell_k)")
+at the distance matrix between locations in
+![\mathbb{N}(\mathbf{s}\_0)](https://latex.codecogs.com/svg.image?%5Cmathbb%7BN%7D%28%5Cmathbf%7Bs%7D_0%29 "\mathbb{N}(\mathbf{s}_0)"),
+and
+![\mathbf{c}\_{k,\mathbf{s}\_0,\mathbb{N}(\mathbf{s}\_0)}](https://latex.codecogs.com/svg.image?%5Cmathbf%7Bc%7D_%7Bk%2C%5Cmathbf%7Bs%7D_0%2C%5Cmathbb%7BN%7D%28%5Cmathbf%7Bs%7D_0%29%7D "\mathbf{c}_{k,\mathbf{s}_0,\mathbb{N}(\mathbf{s}_0)}")
+is the vector of correlations with elements evaluated
+![C(\cdot, \ell_k)](https://latex.codecogs.com/svg.image?C%28%5Ccdot%2C%20%5Cell_k%29 "C(\cdot, \ell_k)")
+at the vector of distances from
+![\mathbf{s}\_0](https://latex.codecogs.com/svg.image?%5Cmathbf%7Bs%7D_0 "\mathbf{s}_0")
+to
+![\mathbf{s}\_i \in \mathbb{N}(\mathbf{s}\_0)](https://latex.codecogs.com/svg.image?%5Cmathbf%7Bs%7D_i%20%5Cin%20%5Cmathbb%7BN%7D%28%5Cmathbf%7Bs%7D_0%29 "\mathbf{s}_i \in \mathbb{N}(\mathbf{s}_0)").
+
+Sampling from
+![\pi(z_k(\mathbf{s}\_0) \mid \mathbf{z}\_k, \sigma_k, \ell_k)](https://latex.codecogs.com/svg.image?%5Cpi%28z_k%28%5Cmathbf%7Bs%7D_0%29%20%5Cmid%20%5Cmathbf%7Bz%7D_k%2C%20%5Csigma_k%2C%20%5Cell_k%29 "\pi(z_k(\mathbf{s}_0) \mid \mathbf{z}_k, \sigma_k, \ell_k)")
+for posterior predictive value for the latent processes
+![z_k(\mathbf{s})](https://latex.codecogs.com/svg.image?z_k%28%5Cmathbf%7Bs%7D%29 "z_k(\mathbf{s})")
+at prediction location
+![\mathbf{s}\_0](https://latex.codecogs.com/svg.image?%5Cmathbf%7Bs%7D_0 "\mathbf{s}_0")
+depend on how the latent processes are approximated. In what follows, we
+describe the procedure under each approximating method.
+
+## 1.5 References
 
 <div id="refs" class="references csl-bib-body hanging-indent"
 entry-spacing="0">
@@ -522,10 +671,11 @@ Banerjee, Sudipto. 2017. “High-Dimensional Bayesian Geostatistics.”
 
 </div>
 
-<div id="ref-datta2021sparse" class="csl-entry">
+<div id="ref-datta2022nearest" class="csl-entry">
 
-Datta, Abhirup. 2021. “Sparse Cholesky Matrices in Spatial Statistics.”
-*arXiv Preprint arXiv:2102.13299*.
+Datta, Abhirup. 2022. “Nearest-Neighbor Sparse Cholesky Matrices in
+Spatial Statistics.” *Wiley Interdisciplinary Reviews: Computational
+Statistics* 14 (5): e1574.
 
 </div>
 

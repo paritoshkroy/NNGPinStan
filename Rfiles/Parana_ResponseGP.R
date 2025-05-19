@@ -2,9 +2,9 @@ rm(list=ls())
 library(sf)
 library(tidyverse)
 
-rainfall <- read_csv(file = "data/ParanaRainfall.csv")
-border <- read_csv(file = "data/ParanaBorder.csv")
-predLocs <- read_csv(file = "data/ParanaPredLocs.csv")
+rainfall <- read_csv(file = "Data/ParanaRainfall.csv")
+border <- read_csv(file = "Data/ParanaBorder.csv")
+predLocs <- read_csv(file = "Data/ParanaPredLocs.csv")
 
 parana_poly <- st_sfc(st_polygon(list(cbind(border$east, border$north))))
 ggplot(parana_poly) + geom_sf(fill = NA) + theme_bw()
@@ -28,7 +28,7 @@ input <- list(n = length(rainfall$rainfall),
 str(input)
 
 library(cmdstanr)
-stan_file <- "MarginalLinGeostatModel.stan"
+stan_file <- "StanFiles/ResponseGP.stan"
 mod <- cmdstan_model(stan_file, compile = FALSE)
 mod$check_syntax(pedantic = TRUE)
 mod <- cmdstan_model(stan_file, compile = TRUE)
@@ -54,14 +54,6 @@ quantile97.5 <- function(x) quantile(x, prob = 0.975)
 fixed_summary <- fit$summary(NULL, c("mean","sd","quantile50","quantile2.5","quantile97.5","rhat","ess_bulk","ess_tail"))
 fixed_summary <- fixed_summary %>% filter(variable %in% pars)
 fixed_summary %>% print(digits = 3)
-# A tibble: 6 × 9
-#  variable     mean      sd    `50%` `2.5%` `97.5%`  rhat ess_bulk ess_tail
-#1 phi      294.     123.    269.     138.    611.    1.00    2194.    2551.
-#2 beta[1]  232.      30.3   235.     164.    286.    1.00    2911.    1874.
-#3 beta[2]   -0.0999   0.994  -0.0844  -2.03    1.83  1.00    4670.    3111.
-#4 beta[3]   -0.331    1.01   -0.330   -2.31    1.63  1.00    3902.    3276.
-#5 sigma     46.3      7.17   45.5     34.8    63.1   1.00    2156.    2106.
-#6 tau       18.3      1.94   18.2     14.5    22.0   1.00    3641.    2236.
 
 draws_df <- fit$draws(format = "df")
 str(draws_df)

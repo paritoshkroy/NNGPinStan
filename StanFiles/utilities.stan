@@ -90,7 +90,54 @@ functions{
    return z;
  }
 
+
+array[] vector predict_responseNNGP_rng(
+                vector y, matrix X, matrix pred_X, 
+                array[] vector coords, 
+                array[] vector pred2obs_nei_dist,
+                array[,] int pred2obs_nei_id, 
+                array[] vector theta,
+                vector sigma, vector lscale, vector tau, 
+                int nsize, 
+                int psize, 
+                int L, 
+                int print_interval){
+    
+    array[L] vector[psize] out;
+    int nprint = L %/% print_interval;
+    int m = dims(pred2obs_nei_dist)[2];
+    int p = dims(X)[2];
+    
+    for(l in 1:L) {
+      
+      if(l%nprint == 0) print("Starts for prediction location : ", l);
+      
+      for(i in 1:psize) {
+        
+        
+        // Correlation between a prediction location and m nearest neighbors
+        vector[m] ds = pred2obs_nei_dist[i] * inv(lscale[l]) * sqrt(3.0);
+        vector[m] pred2obs_nei_cor = (1 + ds) .* exp(-ds);
+        
+        // Cholesky decomposition of correlation between m nearest neighbors
+        matrix[m,m] obs_nei_chol = cholesky_decompose(add_diag(gp_matern32_cov(coords[pred2obs_nei_id[i,1:m]], 1, lscale[l]), rep_vector(square(tau[l])*inv_square(sigma[l]), m)));
+        
+        // Conditional mean for the predictive distribution
+        real conditional_mean =  pred_X[i,1:p]*theta[l] + mdivide_left_tri_low(obs_nei_chol, pred2obs_nei_cor)' * mdivide_left_tri_low(obs_nei_chol, y[pred2obs_nei_id[i,1:m]] - X[pred2obs_nei_id[i,1:m],1:p] * theta[l]);
+        
+        // Conditional variance for the predictive distribution
+        real conditional_variance = square(sigma[l]) * (1 + square(tau[l]) * inv_square(sigma[l]) - dot_self(mdivide_left_tri_low(obs_nei_chol, pred2obs_nei_cor)));
+        
+        // Generate from predictive distribution
+        out[l][i] = normal_rng(conditional_mean, sqrt(conditional_variance));
+      }
+    }
+    return out;
+  }
+
+
 }
+
 
 
 data {
