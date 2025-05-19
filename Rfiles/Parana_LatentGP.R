@@ -28,7 +28,7 @@ input <- list(n = length(rainfall$rainfall),
 str(input)
 
 library(cmdstanr)
-stan_file <- "LatentLinGeostatModel.stan"
+stan_file <- "LatentGP.stan"
 mod <- cmdstan_model(stan_file, compile = FALSE)
 mod$check_syntax(pedantic = TRUE)
 mod <- cmdstan_model(stan_file, compile = TRUE)

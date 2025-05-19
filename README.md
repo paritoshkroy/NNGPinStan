@@ -1,15 +1,6 @@
 Analysis of Large Geostatistical Data Using NNGP in Stan
 ================
 
-- [1 Geostatistical Data and Gaussian
-  Processes](#1-geostatistical-data-and-gaussian-processes)
-  - [1.1 Modeling Geostatistical Data](#11-modeling-geostatistical-data)
-  - [1.2 Response GP in Stan](#12-response-gp-in-stan)
-  - [1.3 Vecchia’s approximation and
-    NNGP](#13-vecchias-approximation-and-nngp)
-  - [1.4 Response NNGP in Stan](#14-response-nngp-in-stan)
-  - [1.5 References](#15-references)
-
 # 1 Geostatistical Data and Gaussian Processes
 
 ## 1.1 Modeling Geostatistical Data
