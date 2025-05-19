@@ -12,35 +12,43 @@ library(cmdstanr)
 ######################################################################
 # Generating the data
 ######################################################################
-coords <- unname(as.matrix(expand.grid(x = seq(-0.99, 0.99, length.out = 70), y = seq(-0.99, 0.99, length.out = 70))))
-n <- nrow(coords); n
+coords_grid <- unname(as.matrix(expand.grid(x = seq(-0.99, 0.99, length.out = 80), y = seq(-0.99, 0.99, length.out = 80))))
+coords <- unname(cbind(x = runif(500, -0.99, 0.99), y = runif(500,-0.99, 0.99)))
+
+psize <- nrow(coords_grid) # Prediction locations
+nsize <- nrow(coords) # Observed locations
+
+coords_all <- rbind(coords_grid, coords)
+n <- nrow(coords_all); n
 theta <- c(5,-1)
 sigma <- 3
 lscale <- 0.5
 tau <- 0.5
 
-distMat <- fields::rdist(coords)
-X <- cbind(1,rnorm(n = n))
-mu <- drop(X%*%theta)
+X_all <- cbind(1,rnorm(n = n))
+mu_all <- drop(X_all%*%theta)
 matern32 <- function(d, sigma, lscale){
   ds <- sqrt(3)*d/lscale
   (sigma^2) * (1 + ds) * exp(-ds)
 }
-z <- drop(crossprod(chol(matern32(d = fields::rdist(coords), sigma = sigma, lscale = lscale) + diag(x=1e-9, nrow = n, ncol = n)), rnorm(n)))
-y <- rnorm(n = n, mean = mu + z, sd = tau)
+z_all <- drop(crossprod(chol(matern32(d = fields::rdist(coords_all), sigma = sigma, lscale = lscale) + diag(x=1e-9, nrow = n, ncol = n)), rnorm(n)))
+y_all <- rnorm(n = n, mean = mu_all + z_all, sd = tau)
 
 #######################################################################
 # Preparing the data sets and partition
 #######################################################################
-full_data <- tibble(id = 1:n,
-                    xcoord = coords[,1],
-                    ycoord = coords[,2],
-                    y = y, z = z,
-                    x = X[,2])
+full_data <- tibble(
+  id = 1:n,
+  # 1: prediction location, 2: observed location
+  type_id = c(rep(1,psize),rep(2,nsize)), 
+  xcoord = coords_all[,1],
+  ycoord = coords_all[,2],
+  y = y_all, z = z_all,
+  x = X_all[,2])
 
-train_data <- full_data %>% sample_n(size = 500) ## Change the size as you want
+train_data <- full_data %>% filter(type_id == 2)
 train_data %>% nrow()
-pred_data <- anti_join(full_data, train_data, by = join_by(id, xcoord, ycoord))
+pred_data <- full_data %>% filter(type_id == 1)
 pred_data %>% nrow()
 
 nsize <- nrow(train_data)
@@ -86,9 +94,9 @@ input <- list(n = nsize,
               p = 2,
               y = ord_y,
               X = ord_X,
-              theta_multiplier = c(100, 1),
-              tau_multiplier = sd(y)/qhalfnorm(p = 0.99,sigma = 1),
-              sigma_multiplier = sd(y)/qhalfnorm(p = 0.99,sigma = 1),
+              scale_theta = c(100, 1),
+              scale_tau = sd(y)/qhalfnorm(p = 0.99,sigma = 1),
+              scale_sigma = sd(y)/qhalfnorm(p = 0.99,sigma = 1),
               a = 2,
               b = 0.1,
               neiID = obs_nei_id,
@@ -221,4 +229,27 @@ pred_summary_dt %>%
   theme_bw() +
   xlab("Observed") +
   ylab("Predicted mean")
+
+## Observed and Predicted Surface with the data locations used for modeling
+pred_summary_dt %>%
+  select(id, post_mean, y, xcoord, ycoord) %>%
+  rename(`1`=y, `2`=post_mean) %>%
+  pivot_longer(cols = c("1", "2"), names_to = "type_id", values_to = "vals") %>%
+  mutate(type_id = as.numeric(type_id)) %>%
+  mutate(type_id = factor(type_id, label = c("Observed", "Predicted Posterior Mean"))) %>%
+  ggplot(aes(x = xcoord, y = ycoord)) +
+  geom_tile(aes(fill = vals)) +
+  viridis::scale_fill_viridis() +
+  geom_point(data = rbind(
+    train_data %>% mutate(type_id = 1),
+    train_data %>% mutate(type_id = 2)) %>%
+      mutate(type_id = factor(type_id, label = c("Observed", "Predicted Posterior Mean"))), 
+    aes(x = xcoord, y = ycoord), shape = 4, size = 0.7) +
+  xlab("") +
+  ylab("") +
+  facet_wrap(~type_id) +
+  theme_bw() +
+  theme(panel.grid = element_blank(),
+        legend.title = element_blank(),
+        strip.background = element_blank())
 

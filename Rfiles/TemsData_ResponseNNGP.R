@@ -105,7 +105,7 @@ draws_df
 
 library(bayesplot)
 color_scheme_set("brewer-Spectral")
-mcmc_trace(draws_df,  pars = c("theta[1]", "theta[2]", "sigma", "ell","tau"), facet_args = list(ncol = 3)) + facet_text(size = 15)
+mcmc_trace(draws_df,  pars = c("theta[1]", "theta[2]", "theta[3]", "sigma", "ell","tau"), facet_args = list(ncol = 3)) + facet_text(size = 15)
 
 ###############################################################
 # Extract Posterior Samples

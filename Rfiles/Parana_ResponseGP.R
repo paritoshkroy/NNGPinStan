@@ -1,10 +1,11 @@
 rm(list=ls())
+graphics.off()
 library(sf)
 library(tidyverse)
 
 rainfall <- read_csv(file = "Data/ParanaRainfall.csv")
 border <- read_csv(file = "Data/ParanaBorder.csv")
-predLocs <- read_csv(file = "Data/ParanaPredLocs.csv")
+pred_data <- read_csv(file = "Data/ParanaPredLocs.csv")
 
 parana_poly <- st_sfc(st_polygon(list(cbind(border$east, border$north))))
 ggplot(parana_poly) + geom_sf(fill = NA) + theme_bw()
@@ -18,9 +19,9 @@ hist(1/rgamma(n = 1000, shape = a, rate = b))
 input <- list(n = length(rainfall$rainfall), 
               p = 3, 
               y = rainfall$rainfall, 
-              X = unname(cbind(1, scale(rainfall$east), scale(rainfall$north))),
+              X = unname(cbind(1, scale(rainfall$east)[,1], scale(rainfall$north)[,1])),
               coords = unname(cbind(rainfall$east, rainfall$north)),
-              scale_beta = c(100,1,1),
+              scale_theta = c(100,1,1),
               scale_sigma = sd(rainfall$rainfall)/2.58,
               scale_tau = sd(rainfall$rainfall)/2.58,
               a = a,
@@ -47,7 +48,7 @@ elapsed_time <- fit$time()
 elapsed_time
 elapsed_time$total/60
 
-pars <- c(paste0("beta[",1:3,"]"),"sigma","phi","tau")
+pars <- c(paste0("theta[",1:3,"]"), "sigma", "ell", "tau")
 quantile2.5 <- function(x) quantile(x, prob = 0.025)
 quantile50 <- function(x) quantile(x, prob = 0.50)
 quantile97.5 <- function(x) quantile(x, prob = 0.975)
@@ -67,34 +68,34 @@ mcmc_trace(draws_df,  pars = pars, facet_args = list(ncol = 3)) +
 # Extract Posterior Samples
 ###############################################################
 size_post_samples <- nrow(draws_df); size_post_samples
-post_beta <- as_tibble(draws_df) %>% dplyr::select(starts_with("beta[")) %>% as.matrix() %>% unname(); str(post_beta)
+post_theta <- as_tibble(draws_df) %>% dplyr::select(starts_with("theta[")) %>% as.matrix() %>% unname(); str(post_theta)
 post_sigma <- draws_df$sigma; str(post_sigma)
-post_phi <- draws_df$phi; str(post_phi)
+post_ell <- draws_df$ell; str(post_ell)
 post_tau <- draws_df$tau; str(post_tau)
 
 ########################################################################
 # Spatial Prediction/Interpolation/Kriging
 # To make predictions at unobserved locations, you must have the same covariates (used in model building) available for those locations
 #######################################################################
-rstan::expose_stan_functions(stanmodel = "utilities.stan")
+rstan::expose_stan_functions(stanmodel = "StanFiles/utilities.stan")
 
 ## Coordinates of prediction locations
-predLocs
-predCoords <- unname(as.matrix(predLocs[,c("east","north")]))
-predCoords
+pred_data
+pred_coords <- unname(as.matrix(pred_data[,c("east","north")]))
+pred_coords
 
 ## Matrix of covariate at prediction locations
 ## Standardize the covariate **"east"** using the `scale` function, ensuring that the same **mean (center)** and **standard deviation (scale)** from the observed data (used for model fitting) are applied.
-predX1 <- scale(x = predLocs$east, 
+pred_x1 <- scale(x = pred_data$east, 
                 center = mean(rainfall$east), 
                 scale = sd(rainfall$east))
 
-predX2 <- scale(x = predLocs$north, 
+pred_x2 <- scale(x = pred_data$north, 
                 center = mean(rainfall$north), 
                 scale = sd(rainfall$north))
 
-predX <- cbind(1,predX1,predX2)
-predX
+pred_X <- cbind(1,pred_x1,pred_x2)
+pred_X
 
 ## The outcome vector is represented as **c(y1, y2)**, where **y1** corresponds to the outcomes at prediction locations and **y2** corresponds to the outcomes at observed locations. Similarly, the covariance matrix is partitioned following the same order.
 
@@ -105,46 +106,46 @@ l <- 1
 #######################################
 ## Joint Prediction
 #######################################
-draws_predy_list <- lapply(1:size_post_samples, function(l){
+draws_pred_y_list <- lapply(1:size_post_samples, function(l){
   
   ## data used to model fitting
   y2 <- input$y
   ## mean vector at prediction locations
-  mu1 <- drop(predX %*% post_beta[l,])
+  mu1 <- drop(pred_X %*% post_theta[l,])
   ## mean vector at observation locations
-  mu2 <- drop(input$X %*% post_beta[l,])
+  mu2 <- drop(input$X %*% post_theta[l,])
   
   ## Covariance among the outcomes at prediction locations: Cov(y1)
   V11 <- exposed_exponential_cov(
-    coords = lapply(1:nrow(predCoords), function(i) predCoords[i,]),
-    sigma = post_sigma[l], length_scale = post_phi[l]) + diag(x = post_tau[l]^2, nrow = 4, ncol = 4)
+    coords = lapply(1:nrow(pred_coords), function(i) pred_coords[i,]),
+    sigma = post_sigma[l], length_scale = post_ell[l]) + diag(x = post_tau[l]^2, nrow = 4, ncol = 4)
   
   ## Covariance among the outcomes at observation locations: Cov(y2)
   V22 <- exposed_exponential_cov(
     coords = lapply(1:nrow(input$coords), function(i) input$coords[i,]),
-    sigma = post_sigma[l], length_scale = post_phi[l]) + diag(x = post_tau[l]^2, nrow = input$n, ncol = input$n)
+    sigma = post_sigma[l], length_scale = post_ell[l]) + diag(x = post_tau[l]^2, nrow = input$n, ncol = input$n)
   
   ## Covariance between the outcomes at prediction locations and observation locations: Cov(y1,y2)
   V12 <- exposed_pred2obs_exponential_cov(
-    coords1 = lapply(1:nrow(predCoords), function(i) predCoords[i,]),
+    coords1 = lapply(1:nrow(pred_coords), function(i) pred_coords[i,]),
     coords2 = lapply(1:nrow(input$coords), function(i) input$coords[i,]),
-    sigma = post_sigma[l], length_scale = post_phi[l])
+    sigma = post_sigma[l], length_scale = post_ell[l])
   
   predy <- multi_conditional_normal_rng(y2 = y2, mu1 = mu1, mu2 = mu2, V11 = V11, V12 = V12,  V22 = V22)
   
   return(predy)
 })
 
-draws_predy <- do.call(rbind, draws_predy_list)
+draws_predy <- do.call(rbind, draws_pred_y_list)
 str(draws_predy)
 draws_predy_df <- as_tibble(draws_predy, .name_repair = ~paste0(1:4))
 draws_predy_df                 
 
 draws_predy_df %>%
-  gather(predLocID, predy) %>%
-  ggplot(aes(x = predy)) + 
+  gather(pred_loc_id, pred) %>%
+  ggplot(aes(x = pred)) + 
   geom_density() + 
-  facet_wrap(~predLocID, scales = "free_y", labeller = label_bquote(Prediction~Location~.(predLocID))) +
+  facet_wrap(~pred_loc_id, scales = "free_y", labeller = label_bquote(Prediction~Location~.(pred_loc_id))) +
   theme_bw() +
   theme(strip.background = element_blank())
 
@@ -160,19 +161,19 @@ draws_uni_predy_list <- lapply(1:size_post_samples, function(l){
   
   V22 <- exposed_exponential_cov(
     coords = lapply(1:nrow(input$coords), function(i) input$coords[i,]),
-    sigma = post_sigma[l], length_scale = post_phi[l]) + diag(x = post_tau[l]^2, nrow = input$n, ncol = input$n)
+    sigma = post_sigma[l], length_scale = post_ell[l]) + diag(x = post_tau[l]^2, nrow = input$n, ncol = input$n)
   
   predy <- unlist(lapply(1:4, function(k){
     
     V12 <- exposed_pred2obs_exponential_cov(
-      coords1 = list(predCoords[k,]),
+      coords1 = list(pred_coords[k,]),
       coords2 = lapply(1:nrow(input$coords), function(i) input$coords[i,]),
-      sigma = post_sigma[l], length_scale = post_phi[l])
+      sigma = post_sigma[l], length_scale = post_ell[l])
     
     out <- uni_conditional_normal_rng(
       y2 = input$y, 
-      mu1 = drop(predX[k,] %*% post_beta[l,]), 
-      mu2 = drop(input$X %*% post_beta[l,]), 
+      mu1 = drop(pred_X[k,] %*% post_theta[l,]), 
+      mu2 = drop(input$X %*% post_theta[l,]), 
       V11 = V11, V12 = V12,  V22 = V22)
     
     return(out)
@@ -187,10 +188,10 @@ draws_uni_predy_df <- as_tibble(draws_uni_predy, .name_repair = ~paste0(1:4))
 draws_uni_predy_df                 
 
 draws_uni_predy_df %>%
-  gather(predLocID, predy) %>%
-  ggplot(aes(x = predy)) + 
+  gather(pred_loc_id, pred) %>%
+  ggplot(aes(x = pred)) + 
   geom_density() + 
-  facet_wrap(~predLocID, scales = "free_y", labeller = label_bquote(Prediction~Location~.(predLocID))) +
+  facet_wrap(~pred_loc_id, scales = "free_y", labeller = label_bquote(Prediction~Location~.(pred_loc_id))) +
   theme_bw() +
   theme(strip.background = element_blank())
 
@@ -213,80 +214,80 @@ prid_grid_within <- st_intersection(parana_poly, prid_grid)
 ggplot(prid_grid_within) + geom_sf(size = 0.25) + 
   geom_sf(data = parana_poly, fill = NA) + theme_bw()
 
-predCoords <- unname(st_coordinates(prid_grid_within))
-head(predCoords)
-nrow(predCoords)
+pred_coords <- unname(st_coordinates(prid_grid_within))
+head(pred_coords)
+nrow(pred_coords)
 
-predX1 <- scale(x = predCoords[,1], 
+pred_X1 <- scale(x = pred_coords[,1], 
                 center = mean(rainfall$east), 
                 scale = sd(rainfall$east))
-predX2 <- scale(x = predCoords[,2],
+pred_X2 <- scale(x = pred_coords[,2],
                 center = mean(rainfall$north), 
                 scale = sd(rainfall$north))
-predX <- cbind(1,predX1,predX2)
-head(predX)
-nrow(predX)
+pred_X <- cbind(1,pred_X1,pred_X2)
+head(pred_X)
+nrow(pred_X)
 
 l <- 1
 ## The following perform a joint prediction, however, univariate prediction can be done similarly as before.
-draws_predy_list <- lapply(1:size_post_samples, function(l){
+draws_pred_y_list <- lapply(1:size_post_samples, function(l){
     
     V11 <- exposed_exponential_cov(
-      coords = lapply(1:nrow(predCoords), function(i) predCoords[i,]),
-      sigma = post_sigma[l], length_scale = post_phi[l]) + diag(x = post_tau[l]^2, nrow = nrow(predCoords), ncol = nrow(predCoords))
+      coords = lapply(1:nrow(pred_coords), function(i) pred_coords[i,]),
+      sigma = post_sigma[l], length_scale = post_ell[l]) + diag(x = post_tau[l]^2, nrow = nrow(pred_coords), ncol = nrow(pred_coords))
     
     V22 <- exposed_exponential_cov(
       coords = lapply(1:nrow(input$coords), function(i) input$coords[i,]),
-      sigma = post_sigma[l], length_scale = post_phi[l]) + diag(x = post_tau[l]^2, nrow = input$n, ncol = input$n)
+      sigma = post_sigma[l], length_scale = post_ell[l]) + diag(x = post_tau[l]^2, nrow = input$n, ncol = input$n)
     
     V12 <- exposed_pred2obs_exponential_cov(
-      coords1 = lapply(1:nrow(predCoords), function(i) predCoords[i,]),
+      coords1 = lapply(1:nrow(pred_coords), function(i) pred_coords[i,]),
       coords2 = lapply(1:nrow(input$coords), function(i) input$coords[i,]),
-      sigma = post_sigma[l], length_scale = post_phi[l])
+      sigma = post_sigma[l], length_scale = post_ell[l])
     
-    predy <- multi_conditional_normal_rng(y2 = input$y, mu1 = drop(predX %*% post_beta[l,]), mu2 = drop(input$X %*% post_beta[l,]), V11 = V11, V12 = V12,  V22 = V22)
+    predy <- multi_conditional_normal_rng(y2 = input$y, mu1 = drop(pred_X %*% post_theta[l,]), mu2 = drop(input$X %*% post_theta[l,]), V11 = V11, V12 = V12,  V22 = V22)
     
     return(predy)
   })
   
-draws_predy <- do.call(rbind, draws_predy_list)
-str(draws_predy)
-draws_predy_df <- as_tibble(draws_predy, .name_repair = ~paste0(1:nrow(predCoords)))
+draws_pred_y <- do.call(rbind, draws_pred_y_list)
+str(draws_pred_y)
+draws_pred_y_df <- as_tibble(draws_pred_y, .name_repair = ~paste0(1:nrow(pred_coords)))
 draws_predy_df                 
   
-draws_predy_df %>%
-  gather(predLocID, predy) %>%
-  filter(predLocID %in% sample(unique(predLocID), size = 5, replace = FALSE)) %>%
-  ggplot(aes(x = predy)) + 
+draws_pred_y_df %>%
+  gather(pred_loc_id, pred) %>%
+  mutate(pred_loc_id = as.numeric(pred_loc_id)) %>%
+  filter(pred_loc_id %in% sample(unique(pred_loc_id), size = 5, replace = FALSE)) %>%
+  ggplot(aes(x = pred)) + 
   geom_density() + 
-  facet_wrap(~predLocID, scales = "free_y", 
-             labeller = label_bquote(Prediction~Location~.(predLocID))) +
+  facet_wrap(~pred_loc_id, scales = "free_y", 
+             labeller = label_bquote(Prediction~Location~.(pred_loc_id))) +
   theme_bw() +
   theme(strip.background = element_blank())
 
 
-predy_post_summary <- draws_predy_df %>% 
-  gather(locID, y) %>% 
-  mutate(locID = as.numeric(locID)) %>% 
-  group_by(locID) %>%
-  summarise(post.mean = mean(y),
-            post.sd = sd(y),
-            post.q2.5 = quantile2.5(y),
-            post.q50 = quantile50(y),
-            post.q97.5 = quantile97.5(y)) %>%
-  mutate(east = predCoords[,1]) %>%
-  mutate(north = predCoords[,2])
+pred_y_post_summary <- draws_pred_y_df %>% 
+  gather(pred_loc_id, pred) %>% 
+  mutate(pred_loc_id = as.numeric(pred_loc_id)) %>% 
+  group_by(pred_loc_id) %>%
+  summarise(post.mean = mean(pred),
+            post.sd = sd(pred),
+            post.q2.5 = quantile2.5(pred),
+            post.q50 = quantile50(pred),
+            post.q97.5 = quantile97.5(pred)) %>%
+  mutate(east = pred_coords[,1]) %>%
+  mutate(north = pred_coords[,2])
 
 
-predy_post_summary_sf <- st_as_sf(predy_post_summary, coords = c("east", "north"))
+pred_y_post_summary_sf <- st_as_sf(pred_y_post_summary, coords = c("east", "north"))
 ggplot() + 
   geom_sf(data = parana_poly, fill = NA) + 
-  geom_sf(data = predy_post_summary_sf, aes(col = post.mean)) +
-  colorspace::scale_color_continuous_sequential(palette = "Viridis") +
+  geom_sf(data = pred_y_post_summary_sf, aes(col = post.mean)) +
+  viridis::scale_color_viridis() +
   theme_bw() +
   theme(strip.background = element_blank()) +
   theme(legend.title = element_blank())
-
 
 #######################################
 ## Recovery of z
@@ -298,9 +299,9 @@ draw_z_list <- lapply(1:size_post_samples, function(l){
   recovered_z <- revoery_latent_gp_exponential_cov_rng(
     coords = lapply(1:nrow(input$coords), function(i) input$coords[i,]),
     y = input$y,
-    mu = drop(input$X %*% post_beta[l,]),
+    mu = drop(input$X %*% post_theta[l,]),
     sigma = post_sigma[l],
-    phi = post_phi[l],
+    phi = post_ell[l],
     tau = post_tau[l])
   
   return(recovered_z)
@@ -330,5 +331,6 @@ ggplot() +
   geom_sf(data = z_post_summary_sf, aes(size = post.mean), shape = 1) +
   theme_bw() +
   theme(strip.background = element_blank()) +
+  theme(legend.title = element_blank()) + 
+  theme_bw() +
   theme(legend.title = element_blank())
-theme_bw()

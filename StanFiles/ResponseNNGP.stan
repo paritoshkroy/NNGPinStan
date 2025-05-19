@@ -55,9 +55,9 @@ data{
   vector[n] y;
   matrix[n,p] X;
   
-  vector<lower=0>[p] theta_multiplier;
-  real<lower = 0> tau_multiplier;
-  real<lower = 0> sigma_multiplier;
+  vector<lower=0>[p] scale_theta;
+  real<lower = 0> scale_tau;
+  real<lower = 0> scale_sigma;
   
   real<lower = 0> a; // Shape parameters in the prior for ell
   real<lower = 0> b; // Scale parameters in the prior for ell
@@ -80,9 +80,9 @@ parameters {
 }
 
 transformed parameters{
-  vector[p] theta = theta_multiplier .* theta_std;
-  real tau = tau_multiplier * tau_std;
-  real sigma = sigma_multiplier * sigma_std;
+  vector[p] theta = scale_theta .* theta_std;
+  real tau = scale_tau * tau_std;
+  real sigma = scale_sigma * sigma_std;
 }
 
 
