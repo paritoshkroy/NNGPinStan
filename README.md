@@ -1,13 +1,13 @@
-Analysis of Large Geostatistical Data Uisng NNGP in Stan
+Analysis of Large Geostatistical Data Using NNGP in Stan
 ================
 
 - [1 Geostatistical Data and Gaussian
   Processes](#1-geostatistical-data-and-gaussian-processes)
   - [1.1 Modeling Geostatistical Data](#11-modeling-geostatistical-data)
-  - [1.2 Stan implementation](#12-stan-implementation)
-  - [1.3 Marginal model](#13-marginal-model)
-  - [1.4 Vecchia’s approximation and
-    NNGP](#14-vecchias-approximation-and-nngp)
+  - [1.2 Response GP in Stan](#12-response-gp-in-stan)
+  - [1.3 Vecchia’s approximation and
+    NNGP](#13-vecchias-approximation-and-nngp)
+  - [1.4 Response NNGP in Stan](#14-response-nngp-in-stan)
   - [1.5 References](#15-references)
 
 # 1 Geostatistical Data and Gaussian Processes
@@ -55,11 +55,11 @@ following Bayes’ theorem, the joint posterior distribution of
 ![\boldsymbol{\Phi} = \\\boldsymbol{\theta}, \sigma, \ell, \tau\\](https://latex.codecogs.com/svg.image?%5Cboldsymbol%7B%5CPhi%7D%20%3D%20%5C%7B%5Cboldsymbol%7B%5Ctheta%7D%2C%20%5Csigma%2C%20%5Cell%2C%20%5Ctau%5C%7D "\boldsymbol{\Phi} = \{\boldsymbol{\theta}, \sigma, \ell, \tau\}")
 is proportional to
 
-![\begin{aligned}
-\\\pi(\boldsymbol{\Phi} \mid \mathbf{y}) \propto \mathcal{N}\left(\mathbf{y} \mid \mathbf{X}\boldsymbol{\theta}, \mathbf{V}\right) \\ \pi(\boldsymbol{\Phi}),
-end{aligned}](https://latex.codecogs.com/svg.image?%5Cbegin%7Baligned%7D%0A%5C%5B%5Cpi%28%5Cboldsymbol%7B%5CPhi%7D%20%5Cmid%20%5Cmathbf%7By%7D%29%20%5Cpropto%20%5Cmathcal%7BN%7D%5Cleft%28%5Cmathbf%7By%7D%20%5Cmid%20%5Cmathbf%7BX%7D%5Cboldsymbol%7B%5Ctheta%7D%2C%20%5Cmathbf%7BV%7D%5Cright%29%20%5C%3B%20%5Cpi%28%5Cboldsymbol%7B%5CPhi%7D%29%2C%0Aend%7Baligned%7D "\begin{aligned}
-\[\pi(\boldsymbol{\Phi} \mid \mathbf{y}) \propto \mathcal{N}\left(\mathbf{y} \mid \mathbf{X}\boldsymbol{\theta}, \mathbf{V}\right) \; \pi(\boldsymbol{\Phi}),
-end{aligned}")
+![\begin{align}
+\pi(\boldsymbol{\Phi} \mid \mathbf{y}) \propto \mathcal{N}\left(\mathbf{y} \mid \mathbf{X}\boldsymbol{\theta}, \mathbf{V}\right) \\ \pi(\boldsymbol{\Phi}),
+end{align}](https://latex.codecogs.com/svg.image?%5Cbegin%7Balign%7D%0A%5Cpi%28%5Cboldsymbol%7B%5CPhi%7D%20%5Cmid%20%5Cmathbf%7By%7D%29%20%5Cpropto%20%5Cmathcal%7BN%7D%5Cleft%28%5Cmathbf%7By%7D%20%5Cmid%20%5Cmathbf%7BX%7D%5Cboldsymbol%7B%5Ctheta%7D%2C%20%5Cmathbf%7BV%7D%5Cright%29%20%5C%3B%20%5Cpi%28%5Cboldsymbol%7B%5CPhi%7D%29%2C%0Aend%7Balign%7D "\begin{align}
+\pi(\boldsymbol{\Phi} \mid \mathbf{y}) \propto \mathcal{N}\left(\mathbf{y} \mid \mathbf{X}\boldsymbol{\theta}, \mathbf{V}\right) \; \pi(\boldsymbol{\Phi}),
+end{align}")
 
 where
 ![\mathbf{V} = \sigma^2 \mathbf{B} + \tau^2\mathbf{I}](https://latex.codecogs.com/svg.image?%5Cmathbf%7BV%7D%20%3D%20%5Csigma%5E2%20%5Cmathbf%7BB%7D%20%2B%20%5Ctau%5E2%5Cmathbf%7BI%7D "\mathbf{V} = \sigma^2 \mathbf{B} + \tau^2\mathbf{I}")
@@ -100,15 +100,15 @@ is
 multivariate normal with conditional mean and variance, respectively,
 given by
 
-![\begin{aligned}
+![\begin{align}
 \mathbb{E}\[\mathbf{y}^\star \mid \mathbf{y}\] = 
 \mathbf{X}^\star\boldsymbol{\theta} + \mathbf{V}^{\text{pred-to-obs}} \mathbf{V}^{-1} (\mathbf{y} - \mathbf{X}\boldsymbol{\theta})\\
 \text{and} \text{Var}\[\mathbf{y}^\star \mid \mathbf{y}\] = \mathbf{V}^\star - \mathbf{V}^{\text{pred-to-obs}} \mathbf{V}^{-1} \mathbf{V}^{\text{obs-to-pred}},
-\end{aligned}](https://latex.codecogs.com/svg.image?%5Cbegin%7Baligned%7D%0A%5Cmathbb%7BE%7D%5B%5Cmathbf%7By%7D%5E%5Cstar%20%5Cmid%20%5Cmathbf%7By%7D%5D%20%3D%20%0A%5Cmathbf%7BX%7D%5E%5Cstar%5Cboldsymbol%7B%5Ctheta%7D%20%2B%20%5Cmathbf%7BV%7D%5E%7B%5Ctext%7Bpred-to-obs%7D%7D%20%5Cmathbf%7BV%7D%5E%7B-1%7D%20%28%5Cmathbf%7By%7D%20-%20%5Cmathbf%7BX%7D%5Cboldsymbol%7B%5Ctheta%7D%29%5C%5C%0A%5Ctext%7Band%7D%20%5Ctext%7BVar%7D%5B%5Cmathbf%7By%7D%5E%5Cstar%20%5Cmid%20%5Cmathbf%7By%7D%5D%20%3D%20%5Cmathbf%7BV%7D%5E%5Cstar%20-%20%5Cmathbf%7BV%7D%5E%7B%5Ctext%7Bpred-to-obs%7D%7D%20%5Cmathbf%7BV%7D%5E%7B-1%7D%20%5Cmathbf%7BV%7D%5E%7B%5Ctext%7Bobs-to-pred%7D%7D%2C%0A%5Cend%7Baligned%7D "\begin{aligned}
+\end{align}](https://latex.codecogs.com/svg.image?%5Cbegin%7Balign%7D%0A%5Cmathbb%7BE%7D%5B%5Cmathbf%7By%7D%5E%5Cstar%20%5Cmid%20%5Cmathbf%7By%7D%5D%20%3D%20%0A%5Cmathbf%7BX%7D%5E%5Cstar%5Cboldsymbol%7B%5Ctheta%7D%20%2B%20%5Cmathbf%7BV%7D%5E%7B%5Ctext%7Bpred-to-obs%7D%7D%20%5Cmathbf%7BV%7D%5E%7B-1%7D%20%28%5Cmathbf%7By%7D%20-%20%5Cmathbf%7BX%7D%5Cboldsymbol%7B%5Ctheta%7D%29%5C%5C%0A%5Ctext%7Band%7D%20%5Ctext%7BVar%7D%5B%5Cmathbf%7By%7D%5E%5Cstar%20%5Cmid%20%5Cmathbf%7By%7D%5D%20%3D%20%5Cmathbf%7BV%7D%5E%5Cstar%20-%20%5Cmathbf%7BV%7D%5E%7B%5Ctext%7Bpred-to-obs%7D%7D%20%5Cmathbf%7BV%7D%5E%7B-1%7D%20%5Cmathbf%7BV%7D%5E%7B%5Ctext%7Bobs-to-pred%7D%7D%2C%0A%5Cend%7Balign%7D "\begin{align}
 \mathbb{E}[\mathbf{y}^\star \mid \mathbf{y}] = 
 \mathbf{X}^\star\boldsymbol{\theta} + \mathbf{V}^{\text{pred-to-obs}} \mathbf{V}^{-1} (\mathbf{y} - \mathbf{X}\boldsymbol{\theta})\\
 \text{and} \text{Var}[\mathbf{y}^\star \mid \mathbf{y}] = \mathbf{V}^\star - \mathbf{V}^{\text{pred-to-obs}} \mathbf{V}^{-1} \mathbf{V}^{\text{obs-to-pred}},
-\end{aligned}")
+\end{align}")
 
 which is used to perform the prediction, where
 ![\mathbf{X}^\star](https://latex.codecogs.com/svg.image?%5Cmathbf%7BX%7D%5E%5Cstar "\mathbf{X}^\star")
@@ -138,11 +138,11 @@ or response Gaussian model, and the inference and prediction procedures
 are outlined based on it. However, this model can be represented
 hierarchically as follows:
 
-![\begin{aligned}
+![\begin{align}
 \mathbf{y} \mid \boldsymbol{\theta}, \mathbf{z} \sim \mathcal{N} \left(\mathbf{X}\boldsymbol{\theta} + \mathbf{z}, \tau^2\mathbf{I}\right),
-\end{aligned}](https://latex.codecogs.com/svg.image?%5Cbegin%7Baligned%7D%0A%5Cmathbf%7By%7D%20%5Cmid%20%5Cboldsymbol%7B%5Ctheta%7D%2C%20%5Cmathbf%7Bz%7D%20%5Csim%20%5Cmathcal%7BN%7D%20%5Cleft%28%5Cmathbf%7BX%7D%5Cboldsymbol%7B%5Ctheta%7D%20%2B%20%5Cmathbf%7Bz%7D%2C%20%5Ctau%5E2%5Cmathbf%7BI%7D%5Cright%29%2C%0A%5Cend%7Baligned%7D "\begin{aligned}
+\end{align}](https://latex.codecogs.com/svg.image?%5Cbegin%7Balign%7D%0A%5Cmathbf%7By%7D%20%5Cmid%20%5Cboldsymbol%7B%5Ctheta%7D%2C%20%5Cmathbf%7Bz%7D%20%5Csim%20%5Cmathcal%7BN%7D%20%5Cleft%28%5Cmathbf%7BX%7D%5Cboldsymbol%7B%5Ctheta%7D%20%2B%20%5Cmathbf%7Bz%7D%2C%20%5Ctau%5E2%5Cmathbf%7BI%7D%5Cright%29%2C%0A%5Cend%7Balign%7D "\begin{align}
 \mathbf{y} \mid \boldsymbol{\theta}, \mathbf{z} \sim \mathcal{N} \left(\mathbf{X}\boldsymbol{\theta} + \mathbf{z}, \tau^2\mathbf{I}\right),
-\end{aligned}")
+\end{align}")
 
 ![\mathbf{z} \sim \mathcal{N}(\mathbf{0}, \sigma^2\mathbf{B}).](https://latex.codecogs.com/svg.image?%5Cmathbf%7Bz%7D%20%5Csim%20%5Cmathcal%7BN%7D%28%5Cmathbf%7B0%7D%2C%20%5Csigma%5E2%5Cmathbf%7BB%7D%29. "\mathbf{z} \sim \mathcal{N}(\mathbf{0}, \sigma^2\mathbf{B}).")
 
@@ -160,8 +160,8 @@ can be recovered through composition sampling techniques.
 One might be interested in the posterior distribution of the latent
 spatial component
 ![z(\mathbf{s})](https://latex.codecogs.com/svg.image?z%28%5Cmathbf%7Bs%7D%29 "z(\mathbf{s})").
-The inference using joint posterior distribution in equation~ ignores
-the estimation of the latent vector
+The inference using joint posterior distribution in equation ignores the
+estimation of the latent vector
 ![\mathbf{z}^\prime = (z(\mathbf{s}\_1), \ldots, z(\mathbf{s}\_n))](https://latex.codecogs.com/svg.image?%5Cmathbf%7Bz%7D%5E%5Cprime%20%3D%20%28z%28%5Cmathbf%7Bs%7D_1%29%2C%20%5Cldots%2C%20z%28%5Cmathbf%7Bs%7D_n%29%29 "\mathbf{z}^\prime = (z(\mathbf{s}_1), \ldots, z(\mathbf{s}_n))")
 during model fitting. Nevertheless, we can recover the distribution of
 vector
@@ -241,9 +241,7 @@ multivariate normal with mean
 and variance
 ![\text{Var}\[\mathbf{z}^\star \mid \mathbf{z}\] = \sigma^2 (\mathbf{B}^\star - \mathbf{B}^{\text{pred-to-obs}} \mathbf{B}^{-1} \mathbf{B}^{\text{obs-to-pred}})](https://latex.codecogs.com/svg.image?%5Ctext%7BVar%7D%5B%5Cmathbf%7Bz%7D%5E%5Cstar%20%5Cmid%20%5Cmathbf%7Bz%7D%5D%20%3D%20%5Csigma%5E2%20%28%5Cmathbf%7BB%7D%5E%5Cstar%20-%20%5Cmathbf%7BB%7D%5E%7B%5Ctext%7Bpred-to-obs%7D%7D%20%5Cmathbf%7BB%7D%5E%7B-1%7D%20%5Cmathbf%7BB%7D%5E%7B%5Ctext%7Bobs-to-pred%7D%7D%29 "\text{Var}[\mathbf{z}^\star \mid \mathbf{z}] = \sigma^2 (\mathbf{B}^\star - \mathbf{B}^{\text{pred-to-obs}} \mathbf{B}^{-1} \mathbf{B}^{\text{obs-to-pred}})").
 
-## 1.2 Stan implementation
-
-## 1.3 Marginal model
+## 1.2 Response GP in Stan
 
     data {
       int<lower=0> n;
@@ -252,12 +250,13 @@ and variance
       matrix[n,p] X;
       array[n] vector[2] coords;
       
-      vector<lower=0>[p] scale_beta;
-      real<lower=0> scale_sigma;
-      real<lower=0> scale_tau;
+      vector<lower=0>[p] theta_multiplier;
+      real<lower=0> sigma_multiplier;
+      real<lower=0> tau_multiplier;
       
-      real<lower=0> a;
-      real<lower=0> b;
+      real<lower = 0> a; // Shape parameters in the prior for ell
+      real<lower = 0> b; // Scale parameters in the prior for ell
+      
     }
 
     transformed data{
@@ -265,33 +264,32 @@ and variance
     }
 
     parameters {
-      vector[p] beta_std;
-      real<lower=0> phi;
+      vector[p] theta_std;
+      real<lower=0> ell;
       real<lower=0> sigma_std;
       real<lower=0> tau_std;
     }
 
     transformed parameters{
-      vector[p] beta = scale_beta .* beta_std;
-      real sigma = scale_sigma * sigma_std;
-      real tau = scale_sigma * tau_std;
+      vector[p] theta = theta_multiplier .* theta_std;
+      real sigma = sigma_multiplier * sigma_std;
+      real tau = sigma_multiplier * tau_std;
     }
 
     model {
-      beta_std ~ std_normal();
-      phi ~ inv_gamma(a,b);
+      theta_std ~ std_normal();
+      ell ~ inv_gamma(a,b);
       sigma_std ~ std_normal();
       tau_std ~ std_normal();
-      vector[n] mu = X*beta;
-      //matrix[n,n] Sigma = gp_matern32_cov(coords, sigma, phi);
-      matrix[n,n] Sigma = gp_exponential_cov(coords, sigma, phi);
+      vector[n] mu = X*theta;
+      matrix[n,n] Sigma = gp_matern32_cov(coords, sigma, ell);
       matrix[n,n] L = cholesky_decompose(add_diag(Sigma, square(tau)));
       y ~ multi_normal_cholesky(mu, L);
     }
 
-### 1.3.1 Computational complexity in analysing large datasets
+### 1.2.1 Computational complexity in analysing large datasets
 
-## 1.4 Vecchia’s approximation and NNGP
+## 1.3 Vecchia’s approximation and NNGP
 
 Datta et al. ([2016](#ref-datta2016hierarchical)) developed the NNGP as
 a sparse approximation of to a full GP. It generalizes the idea of
@@ -304,10 +302,10 @@ where the nearest neighbors set of
 is defined based upon the Euclidean distance ([Datta
 2022](#ref-datta2022nearest)). Both the nearest neighbor approximations
 builds upon the idea that the joint distribution for a random vector
-![\boldsymbol{z}](https://latex.codecogs.com/svg.image?%5Cboldsymbol%7Bz%7D "\boldsymbol{z}")
+![\mathbf{z}](https://latex.codecogs.com/svg.image?%5Cmathbf%7Bz%7D "\mathbf{z}")
 can be looked upon as a directed acyclic graph (DAG) to construct sparse
 models for
-![\boldsymbol{z}](https://latex.codecogs.com/svg.image?%5Cboldsymbol%7Bz%7D "\boldsymbol{z}")
+![\mathbf{z}](https://latex.codecogs.com/svg.image?%5Cmathbf%7Bz%7D "\mathbf{z}")
 by limiting the size of the set of parents of each node ([Banerjee
 2017](#ref-banerjee2017high); [Finley et al.
 2019](#ref-finley2019efficient)).
@@ -332,49 +330,49 @@ is given by
 
 ![\begin{align}
 \label{eq_nngp_lik}
-f(z(\mathbf{s}\_1)) \prod\_{i=2}^{n} f(z(\mathbf{s}\_i) \mid \boldsymbol{z}\_{\mathcal{N}(\mathbf{s})(\mathbf{s}\_i)})
-\end{align}](https://latex.codecogs.com/svg.image?%5Cbegin%7Balign%7D%0A%5Clabel%7Beq_nngp_lik%7D%0Af%28z%28%5Cmathbf%7Bs%7D_1%29%29%20%5Cprod_%7Bi%3D2%7D%5E%7Bn%7D%20f%28z%28%5Cmathbf%7Bs%7D_i%29%20%5Cmid%20%5Cboldsymbol%7Bz%7D_%7B%5Cmathcal%7BN%7D%28%5Cmathbf%7Bs%7D%29%28%5Cmathbf%7Bs%7D_i%29%7D%29%0A%5Cend%7Balign%7D "\begin{align}
+f(z(\mathbf{s}\_1)) \prod\_{i=2}^{n} f(z(\mathbf{s}\_i) \mid \mathbf{z}\_{\mathcal{N}(\mathbf{s})(\mathbf{s}\_i)})
+\end{align}](https://latex.codecogs.com/svg.image?%5Cbegin%7Balign%7D%0A%5Clabel%7Beq_nngp_lik%7D%0Af%28z%28%5Cmathbf%7Bs%7D_1%29%29%20%5Cprod_%7Bi%3D2%7D%5E%7Bn%7D%20f%28z%28%5Cmathbf%7Bs%7D_i%29%20%5Cmid%20%5Cmathbf%7Bz%7D_%7B%5Cmathcal%7BN%7D%28%5Cmathbf%7Bs%7D%29%28%5Cmathbf%7Bs%7D_i%29%7D%29%0A%5Cend%7Balign%7D "\begin{align}
 \label{eq_nngp_lik}
-f(z(\mathbf{s}_1)) \prod_{i=2}^{n} f(z(\mathbf{s}_i) \mid \boldsymbol{z}_{\mathcal{N}(\mathbf{s})(\mathbf{s}_i)})
+f(z(\mathbf{s}_1)) \prod_{i=2}^{n} f(z(\mathbf{s}_i) \mid \mathbf{z}_{\mathcal{N}(\mathbf{s})(\mathbf{s}_i)})
 \end{align}")
 
 where
 ![z(\mathbf{s}\_1) \sim \mathcal{N}(0,C\_{\mathbf{s}\_1,\mathbf{s}\_1})](https://latex.codecogs.com/svg.image?z%28%5Cmathbf%7Bs%7D_1%29%20%5Csim%20%5Cmathcal%7BN%7D%280%2CC_%7B%5Cmathbf%7Bs%7D_1%2C%5Cmathbf%7Bs%7D_1%7D%29 "z(\mathbf{s}_1) \sim \mathcal{N}(0,C_{\mathbf{s}_1,\mathbf{s}_1})")
 and
-![\boldsymbol{z}\_{\mathcal{N}(\mathbf{s})(\mathbf{s}\_i)}](https://latex.codecogs.com/svg.image?%5Cboldsymbol%7Bz%7D_%7B%5Cmathcal%7BN%7D%28%5Cmathbf%7Bs%7D%29%28%5Cmathbf%7Bs%7D_i%29%7D "\boldsymbol{z}_{\mathcal{N}(\mathbf{s})(\mathbf{s}_i)}")
+![\mathbf{z}\_{\mathcal{N}(\mathbf{s})(\mathbf{s}\_i)}](https://latex.codecogs.com/svg.image?%5Cmathbf%7Bz%7D_%7B%5Cmathcal%7BN%7D%28%5Cmathbf%7Bs%7D%29%28%5Cmathbf%7Bs%7D_i%29%7D "\mathbf{z}_{\mathcal{N}(\mathbf{s})(\mathbf{s}_i)}")
 is the set of ![m](https://latex.codecogs.com/svg.image?m "m") nearest
 neighbor of the realizations. The conditional distribution
-![f(z(\mathbf{s}\_i) \mid \boldsymbol{z}\_{\mathcal{N}(\mathbf{s})(\mathbf{s}\_i)})](https://latex.codecogs.com/svg.image?f%28z%28%5Cmathbf%7Bs%7D_i%29%20%5Cmid%20%5Cboldsymbol%7Bz%7D_%7B%5Cmathcal%7BN%7D%28%5Cmathbf%7Bs%7D%29%28%5Cmathbf%7Bs%7D_i%29%7D%29 "f(z(\mathbf{s}_i) \mid \boldsymbol{z}_{\mathcal{N}(\mathbf{s})(\mathbf{s}_i)})")
+![f(z(\mathbf{s}\_i) \mid \mathbf{z}\_{\mathcal{N}(\mathbf{s})(\mathbf{s}\_i)})](https://latex.codecogs.com/svg.image?f%28z%28%5Cmathbf%7Bs%7D_i%29%20%5Cmid%20%5Cmathbf%7Bz%7D_%7B%5Cmathcal%7BN%7D%28%5Cmathbf%7Bs%7D%29%28%5Cmathbf%7Bs%7D_i%29%7D%29 "f(z(\mathbf{s}_i) \mid \mathbf{z}_{\mathcal{N}(\mathbf{s})(\mathbf{s}_i)})")
 is an univariate normal
-![\mathcal{N}(z(\mathbf{s}\_i) \| \mu\_{z(\mathbf{s}\_i) \mid \boldsymbol{z}\_{\mathcal{N}(\mathbf{s})(\mathbf{s}\_i)}}, \sigma^2\_{z(\mathbf{s}\_i) \mid \boldsymbol{z}\_{\mathcal{N}(\mathbf{s})(\mathbf{s}\_i)}})](https://latex.codecogs.com/svg.image?%5Cmathcal%7BN%7D%28z%28%5Cmathbf%7Bs%7D_i%29%20%7C%20%5Cmu_%7Bz%28%5Cmathbf%7Bs%7D_i%29%20%5Cmid%20%5Cboldsymbol%7Bz%7D_%7B%5Cmathcal%7BN%7D%28%5Cmathbf%7Bs%7D%29%28%5Cmathbf%7Bs%7D_i%29%7D%7D%2C%20%5Csigma%5E2_%7Bz%28%5Cmathbf%7Bs%7D_i%29%20%5Cmid%20%5Cboldsymbol%7Bz%7D_%7B%5Cmathcal%7BN%7D%28%5Cmathbf%7Bs%7D%29%28%5Cmathbf%7Bs%7D_i%29%7D%7D%29 "\mathcal{N}(z(\mathbf{s}_i) | \mu_{z(\mathbf{s}_i) \mid \boldsymbol{z}_{\mathcal{N}(\mathbf{s})(\mathbf{s}_i)}}, \sigma^2_{z(\mathbf{s}_i) \mid \boldsymbol{z}_{\mathcal{N}(\mathbf{s})(\mathbf{s}_i)}})")
+![\mathcal{N}(z(\mathbf{s}\_i) \| \mu\_{z(\mathbf{s}\_i) \mid \mathbf{z}\_{\mathcal{N}(\mathbf{s})(\mathbf{s}\_i)}}, \sigma^2\_{z(\mathbf{s}\_i) \mid \mathbf{z}\_{\mathcal{N}(\mathbf{s})(\mathbf{s}\_i)}})](https://latex.codecogs.com/svg.image?%5Cmathcal%7BN%7D%28z%28%5Cmathbf%7Bs%7D_i%29%20%7C%20%5Cmu_%7Bz%28%5Cmathbf%7Bs%7D_i%29%20%5Cmid%20%5Cmathbf%7Bz%7D_%7B%5Cmathcal%7BN%7D%28%5Cmathbf%7Bs%7D%29%28%5Cmathbf%7Bs%7D_i%29%7D%7D%2C%20%5Csigma%5E2_%7Bz%28%5Cmathbf%7Bs%7D_i%29%20%5Cmid%20%5Cmathbf%7Bz%7D_%7B%5Cmathcal%7BN%7D%28%5Cmathbf%7Bs%7D%29%28%5Cmathbf%7Bs%7D_i%29%7D%7D%29 "\mathcal{N}(z(\mathbf{s}_i) | \mu_{z(\mathbf{s}_i) \mid \mathbf{z}_{\mathcal{N}(\mathbf{s})(\mathbf{s}_i)}}, \sigma^2_{z(\mathbf{s}_i) \mid \mathbf{z}_{\mathcal{N}(\mathbf{s})(\mathbf{s}_i)}})")
 and which derived from the following multivariate normal
 
 ![\begin{align}
 \begin{pmatrix}
 z(\mathbf{s}\_i)\\
-\boldsymbol{z}\_{\mathcal{N}(\mathbf{s})(\mathbf{s}\_i)}\\
+\mathbf{z}\_{\mathcal{N}(\mathbf{s})(\mathbf{s}\_i)}\\
 \end{pmatrix} \sim \mathcal{N}\_{m+1}\left(
 \begin{bmatrix}
 0\\
 0
 \end{bmatrix},
 \begin{bmatrix}
-C\_{\mathbf{s}\_i\\\mathbf{s}\_i} & \boldsymbol{C}^\top\_{\mathbf{s}\_i,\mathcal{N}(\mathbf{s})(\mathbf{s}\_i)}\\
-\boldsymbol{C}\_{\mathbf{s}\_i,\mathcal{N}(\mathbf{s})(\mathbf{s}\_i)} & \boldsymbol{C}\_{\mathcal{N}(\mathbf{s})(\mathbf{s}\_i),\mathcal{N}(\mathbf{s})({\mathbf{s}\_i})}
+C\_{\mathbf{s}\_i\\\mathbf{s}\_i} & \mathbf{C}^\top\_{\mathbf{s}\_i,\mathcal{N}(\mathbf{s})(\mathbf{s}\_i)}\\
+\mathbf{C}\_{\mathbf{s}\_i,\mathcal{N}(\mathbf{s})(\mathbf{s}\_i)} & \mathbf{C}\_{\mathcal{N}(\mathbf{s})(\mathbf{s}\_i),\mathcal{N}(\mathbf{s})({\mathbf{s}\_i})}
 \end{bmatrix}
 \right),
-\end{align}](https://latex.codecogs.com/svg.image?%5Cbegin%7Balign%7D%0A%5Cbegin%7Bpmatrix%7D%0Az%28%5Cmathbf%7Bs%7D_i%29%5C%5C%0A%5Cboldsymbol%7Bz%7D_%7B%5Cmathcal%7BN%7D%28%5Cmathbf%7Bs%7D%29%28%5Cmathbf%7Bs%7D_i%29%7D%5C%5C%0A%5Cend%7Bpmatrix%7D%20%5Csim%20%5Cmathcal%7BN%7D_%7Bm%2B1%7D%5Cleft%28%0A%5Cbegin%7Bbmatrix%7D%0A0%5C%5C%0A0%0A%5Cend%7Bbmatrix%7D%2C%0A%5Cbegin%7Bbmatrix%7D%0AC_%7B%5Cmathbf%7Bs%7D_i%5C%2C%5Cmathbf%7Bs%7D_i%7D%20%26%20%5Cboldsymbol%7BC%7D%5E%5Ctop_%7B%5Cmathbf%7Bs%7D_i%2C%5Cmathcal%7BN%7D%28%5Cmathbf%7Bs%7D%29%28%5Cmathbf%7Bs%7D_i%29%7D%5C%5C%0A%5Cboldsymbol%7BC%7D_%7B%5Cmathbf%7Bs%7D_i%2C%5Cmathcal%7BN%7D%28%5Cmathbf%7Bs%7D%29%28%5Cmathbf%7Bs%7D_i%29%7D%20%26%20%5Cboldsymbol%7BC%7D_%7B%5Cmathcal%7BN%7D%28%5Cmathbf%7Bs%7D%29%28%5Cmathbf%7Bs%7D_i%29%2C%5Cmathcal%7BN%7D%28%5Cmathbf%7Bs%7D%29%28%7B%5Cmathbf%7Bs%7D_i%7D%29%7D%0A%5Cend%7Bbmatrix%7D%0A%5Cright%29%2C%0A%5Cend%7Balign%7D "\begin{align}
+\end{align}](https://latex.codecogs.com/svg.image?%5Cbegin%7Balign%7D%0A%5Cbegin%7Bpmatrix%7D%0Az%28%5Cmathbf%7Bs%7D_i%29%5C%5C%0A%5Cmathbf%7Bz%7D_%7B%5Cmathcal%7BN%7D%28%5Cmathbf%7Bs%7D%29%28%5Cmathbf%7Bs%7D_i%29%7D%5C%5C%0A%5Cend%7Bpmatrix%7D%20%5Csim%20%5Cmathcal%7BN%7D_%7Bm%2B1%7D%5Cleft%28%0A%5Cbegin%7Bbmatrix%7D%0A0%5C%5C%0A0%0A%5Cend%7Bbmatrix%7D%2C%0A%5Cbegin%7Bbmatrix%7D%0AC_%7B%5Cmathbf%7Bs%7D_i%5C%2C%5Cmathbf%7Bs%7D_i%7D%20%26%20%5Cmathbf%7BC%7D%5E%5Ctop_%7B%5Cmathbf%7Bs%7D_i%2C%5Cmathcal%7BN%7D%28%5Cmathbf%7Bs%7D%29%28%5Cmathbf%7Bs%7D_i%29%7D%5C%5C%0A%5Cmathbf%7BC%7D_%7B%5Cmathbf%7Bs%7D_i%2C%5Cmathcal%7BN%7D%28%5Cmathbf%7Bs%7D%29%28%5Cmathbf%7Bs%7D_i%29%7D%20%26%20%5Cmathbf%7BC%7D_%7B%5Cmathcal%7BN%7D%28%5Cmathbf%7Bs%7D%29%28%5Cmathbf%7Bs%7D_i%29%2C%5Cmathcal%7BN%7D%28%5Cmathbf%7Bs%7D%29%28%7B%5Cmathbf%7Bs%7D_i%7D%29%7D%0A%5Cend%7Bbmatrix%7D%0A%5Cright%29%2C%0A%5Cend%7Balign%7D "\begin{align}
 \begin{pmatrix}
 z(\mathbf{s}_i)\\
-\boldsymbol{z}_{\mathcal{N}(\mathbf{s})(\mathbf{s}_i)}\\
+\mathbf{z}_{\mathcal{N}(\mathbf{s})(\mathbf{s}_i)}\\
 \end{pmatrix} \sim \mathcal{N}_{m+1}\left(
 \begin{bmatrix}
 0\\
 0
 \end{bmatrix},
 \begin{bmatrix}
-C_{\mathbf{s}_i\,\mathbf{s}_i} & \boldsymbol{C}^\top_{\mathbf{s}_i,\mathcal{N}(\mathbf{s})(\mathbf{s}_i)}\\
-\boldsymbol{C}_{\mathbf{s}_i,\mathcal{N}(\mathbf{s})(\mathbf{s}_i)} & \boldsymbol{C}_{\mathcal{N}(\mathbf{s})(\mathbf{s}_i),\mathcal{N}(\mathbf{s})({\mathbf{s}_i})}
+C_{\mathbf{s}_i\,\mathbf{s}_i} & \mathbf{C}^\top_{\mathbf{s}_i,\mathcal{N}(\mathbf{s})(\mathbf{s}_i)}\\
+\mathbf{C}_{\mathbf{s}_i,\mathcal{N}(\mathbf{s})(\mathbf{s}_i)} & \mathbf{C}_{\mathcal{N}(\mathbf{s})(\mathbf{s}_i),\mathcal{N}(\mathbf{s})({\mathbf{s}_i})}
 \end{bmatrix}
 \right),
 \end{align}")
@@ -384,29 +382,29 @@ where
 ![\begin{align}
 \label{eq_nngp_con_moments}
 \begin{split}
-\mu\_{z(\mathbf{s}\_i) \mid \boldsymbol{z}\_{\mathcal{N}(\mathbf{s})(\mathbf{s}\_i)}} &= \boldsymbol{C}^\top\_{\mathbf{s}\_i,\mathcal{N}(\mathbf{s})(\mathbf{s}\_i)} \boldsymbol{C}\_{\mathcal{N}(\mathbf{s})(\mathbf{s}\_i),\mathcal{N}(\mathbf{s})({\mathbf{s}\_i})}^{-1} \boldsymbol{z}\_{\mathcal{N}(\mathbf{s})(\mathbf{s}\_i)}\\
-\sigma^2\_{z(\mathbf{s}\_i) \mid \boldsymbol{z}\_{\mathcal{N}(\mathbf{s})(\mathbf{s}\_i)}} &= C\_{\mathbf{s}\_i\\\mathbf{s}\_i} - \boldsymbol{C}^\top\_{\mathbf{s}\_i,\mathcal{N}(\mathbf{s})(\mathbf{s}\_i)} \boldsymbol{C}\_{\mathcal{N}(\mathbf{s})(\mathbf{s}\_i),\mathcal{N}(\mathbf{s})({\mathbf{s}\_i})}^{-1} \boldsymbol{C}\_{\mathbf{s}\_i,\mathcal{N}(\mathbf{s})(\mathbf{s}\_i)}\\
+\mu\_{z(\mathbf{s}\_i) \mid \mathbf{z}\_{\mathcal{N}(\mathbf{s})(\mathbf{s}\_i)}} &= \mathbf{C}^\top\_{\mathbf{s}\_i,\mathcal{N}(\mathbf{s})(\mathbf{s}\_i)} \mathbf{C}\_{\mathcal{N}(\mathbf{s})(\mathbf{s}\_i),\mathcal{N}(\mathbf{s})({\mathbf{s}\_i})}^{-1} \mathbf{z}\_{\mathcal{N}(\mathbf{s})(\mathbf{s}\_i)}\\
+\sigma^2\_{z(\mathbf{s}\_i) \mid \mathbf{z}\_{\mathcal{N}(\mathbf{s})(\mathbf{s}\_i)}} &= C\_{\mathbf{s}\_i\\\mathbf{s}\_i} - \mathbf{C}^\top\_{\mathbf{s}\_i,\mathcal{N}(\mathbf{s})(\mathbf{s}\_i)} \mathbf{C}\_{\mathcal{N}(\mathbf{s})(\mathbf{s}\_i),\mathcal{N}(\mathbf{s})({\mathbf{s}\_i})}^{-1} \mathbf{C}\_{\mathbf{s}\_i,\mathcal{N}(\mathbf{s})(\mathbf{s}\_i)}\\
 \end{split}
-\end{align}](https://latex.codecogs.com/svg.image?%5Cbegin%7Balign%7D%0A%5Clabel%7Beq_nngp_con_moments%7D%0A%5Cbegin%7Bsplit%7D%0A%5Cmu_%7Bz%28%5Cmathbf%7Bs%7D_i%29%20%5Cmid%20%5Cboldsymbol%7Bz%7D_%7B%5Cmathcal%7BN%7D%28%5Cmathbf%7Bs%7D%29%28%5Cmathbf%7Bs%7D_i%29%7D%7D%20%26%3D%20%5Cboldsymbol%7BC%7D%5E%5Ctop_%7B%5Cmathbf%7Bs%7D_i%2C%5Cmathcal%7BN%7D%28%5Cmathbf%7Bs%7D%29%28%5Cmathbf%7Bs%7D_i%29%7D%20%5Cboldsymbol%7BC%7D_%7B%5Cmathcal%7BN%7D%28%5Cmathbf%7Bs%7D%29%28%5Cmathbf%7Bs%7D_i%29%2C%5Cmathcal%7BN%7D%28%5Cmathbf%7Bs%7D%29%28%7B%5Cmathbf%7Bs%7D_i%7D%29%7D%5E%7B-1%7D%20%5Cboldsymbol%7Bz%7D_%7B%5Cmathcal%7BN%7D%28%5Cmathbf%7Bs%7D%29%28%5Cmathbf%7Bs%7D_i%29%7D%5C%5C%0A%5Csigma%5E2_%7Bz%28%5Cmathbf%7Bs%7D_i%29%20%5Cmid%20%5Cboldsymbol%7Bz%7D_%7B%5Cmathcal%7BN%7D%28%5Cmathbf%7Bs%7D%29%28%5Cmathbf%7Bs%7D_i%29%7D%7D%20%26%3D%20C_%7B%5Cmathbf%7Bs%7D_i%5C%2C%5Cmathbf%7Bs%7D_i%7D%20-%20%5Cboldsymbol%7BC%7D%5E%5Ctop_%7B%5Cmathbf%7Bs%7D_i%2C%5Cmathcal%7BN%7D%28%5Cmathbf%7Bs%7D%29%28%5Cmathbf%7Bs%7D_i%29%7D%20%5Cboldsymbol%7BC%7D_%7B%5Cmathcal%7BN%7D%28%5Cmathbf%7Bs%7D%29%28%5Cmathbf%7Bs%7D_i%29%2C%5Cmathcal%7BN%7D%28%5Cmathbf%7Bs%7D%29%28%7B%5Cmathbf%7Bs%7D_i%7D%29%7D%5E%7B-1%7D%20%5Cboldsymbol%7BC%7D_%7B%5Cmathbf%7Bs%7D_i%2C%5Cmathcal%7BN%7D%28%5Cmathbf%7Bs%7D%29%28%5Cmathbf%7Bs%7D_i%29%7D%5C%5C%0A%5Cend%7Bsplit%7D%0A%5Cend%7Balign%7D "\begin{align}
+\end{align}](https://latex.codecogs.com/svg.image?%5Cbegin%7Balign%7D%0A%5Clabel%7Beq_nngp_con_moments%7D%0A%5Cbegin%7Bsplit%7D%0A%5Cmu_%7Bz%28%5Cmathbf%7Bs%7D_i%29%20%5Cmid%20%5Cmathbf%7Bz%7D_%7B%5Cmathcal%7BN%7D%28%5Cmathbf%7Bs%7D%29%28%5Cmathbf%7Bs%7D_i%29%7D%7D%20%26%3D%20%5Cmathbf%7BC%7D%5E%5Ctop_%7B%5Cmathbf%7Bs%7D_i%2C%5Cmathcal%7BN%7D%28%5Cmathbf%7Bs%7D%29%28%5Cmathbf%7Bs%7D_i%29%7D%20%5Cmathbf%7BC%7D_%7B%5Cmathcal%7BN%7D%28%5Cmathbf%7Bs%7D%29%28%5Cmathbf%7Bs%7D_i%29%2C%5Cmathcal%7BN%7D%28%5Cmathbf%7Bs%7D%29%28%7B%5Cmathbf%7Bs%7D_i%7D%29%7D%5E%7B-1%7D%20%5Cmathbf%7Bz%7D_%7B%5Cmathcal%7BN%7D%28%5Cmathbf%7Bs%7D%29%28%5Cmathbf%7Bs%7D_i%29%7D%5C%5C%0A%5Csigma%5E2_%7Bz%28%5Cmathbf%7Bs%7D_i%29%20%5Cmid%20%5Cmathbf%7Bz%7D_%7B%5Cmathcal%7BN%7D%28%5Cmathbf%7Bs%7D%29%28%5Cmathbf%7Bs%7D_i%29%7D%7D%20%26%3D%20C_%7B%5Cmathbf%7Bs%7D_i%5C%2C%5Cmathbf%7Bs%7D_i%7D%20-%20%5Cmathbf%7BC%7D%5E%5Ctop_%7B%5Cmathbf%7Bs%7D_i%2C%5Cmathcal%7BN%7D%28%5Cmathbf%7Bs%7D%29%28%5Cmathbf%7Bs%7D_i%29%7D%20%5Cmathbf%7BC%7D_%7B%5Cmathcal%7BN%7D%28%5Cmathbf%7Bs%7D%29%28%5Cmathbf%7Bs%7D_i%29%2C%5Cmathcal%7BN%7D%28%5Cmathbf%7Bs%7D%29%28%7B%5Cmathbf%7Bs%7D_i%7D%29%7D%5E%7B-1%7D%20%5Cmathbf%7BC%7D_%7B%5Cmathbf%7Bs%7D_i%2C%5Cmathcal%7BN%7D%28%5Cmathbf%7Bs%7D%29%28%5Cmathbf%7Bs%7D_i%29%7D%5C%5C%0A%5Cend%7Bsplit%7D%0A%5Cend%7Balign%7D "\begin{align}
 \label{eq_nngp_con_moments}
 \begin{split}
-\mu_{z(\mathbf{s}_i) \mid \boldsymbol{z}_{\mathcal{N}(\mathbf{s})(\mathbf{s}_i)}} &= \boldsymbol{C}^\top_{\mathbf{s}_i,\mathcal{N}(\mathbf{s})(\mathbf{s}_i)} \boldsymbol{C}_{\mathcal{N}(\mathbf{s})(\mathbf{s}_i),\mathcal{N}(\mathbf{s})({\mathbf{s}_i})}^{-1} \boldsymbol{z}_{\mathcal{N}(\mathbf{s})(\mathbf{s}_i)}\\
-\sigma^2_{z(\mathbf{s}_i) \mid \boldsymbol{z}_{\mathcal{N}(\mathbf{s})(\mathbf{s}_i)}} &= C_{\mathbf{s}_i\,\mathbf{s}_i} - \boldsymbol{C}^\top_{\mathbf{s}_i,\mathcal{N}(\mathbf{s})(\mathbf{s}_i)} \boldsymbol{C}_{\mathcal{N}(\mathbf{s})(\mathbf{s}_i),\mathcal{N}(\mathbf{s})({\mathbf{s}_i})}^{-1} \boldsymbol{C}_{\mathbf{s}_i,\mathcal{N}(\mathbf{s})(\mathbf{s}_i)}\\
+\mu_{z(\mathbf{s}_i) \mid \mathbf{z}_{\mathcal{N}(\mathbf{s})(\mathbf{s}_i)}} &= \mathbf{C}^\top_{\mathbf{s}_i,\mathcal{N}(\mathbf{s})(\mathbf{s}_i)} \mathbf{C}_{\mathcal{N}(\mathbf{s})(\mathbf{s}_i),\mathcal{N}(\mathbf{s})({\mathbf{s}_i})}^{-1} \mathbf{z}_{\mathcal{N}(\mathbf{s})(\mathbf{s}_i)}\\
+\sigma^2_{z(\mathbf{s}_i) \mid \mathbf{z}_{\mathcal{N}(\mathbf{s})(\mathbf{s}_i)}} &= C_{\mathbf{s}_i\,\mathbf{s}_i} - \mathbf{C}^\top_{\mathbf{s}_i,\mathcal{N}(\mathbf{s})(\mathbf{s}_i)} \mathbf{C}_{\mathcal{N}(\mathbf{s})(\mathbf{s}_i),\mathcal{N}(\mathbf{s})({\mathbf{s}_i})}^{-1} \mathbf{C}_{\mathbf{s}_i,\mathcal{N}(\mathbf{s})(\mathbf{s}_i)}\\
 \end{split}
 \end{align}")
 
 The conditional distribution
-![f(z(\mathbf{s}\_i) \mid \boldsymbol{z}\_{\mathcal{N}(\mathbf{s})(\mathbf{s}\_i)})](https://latex.codecogs.com/svg.image?f%28z%28%5Cmathbf%7Bs%7D_i%29%20%5Cmid%20%5Cboldsymbol%7Bz%7D_%7B%5Cmathcal%7BN%7D%28%5Cmathbf%7Bs%7D%29%28%5Cmathbf%7Bs%7D_i%29%7D%29 "f(z(\mathbf{s}_i) \mid \boldsymbol{z}_{\mathcal{N}(\mathbf{s})(\mathbf{s}_i)})")
+![f(z(\mathbf{s}\_i) \mid \mathbf{z}\_{\mathcal{N}(\mathbf{s})(\mathbf{s}\_i)})](https://latex.codecogs.com/svg.image?f%28z%28%5Cmathbf%7Bs%7D_i%29%20%5Cmid%20%5Cmathbf%7Bz%7D_%7B%5Cmathcal%7BN%7D%28%5Cmathbf%7Bs%7D%29%28%5Cmathbf%7Bs%7D_i%29%7D%29 "f(z(\mathbf{s}_i) \mid \mathbf{z}_{\mathcal{N}(\mathbf{s})(\mathbf{s}_i)})")
 can also be viewed as the likelihood from the generative model
-![z(\mathbf{s}\_i) = \boldsymbol{a}\_i \boldsymbol{z}\_{\mathcal{N}(\mathbf{s})(\mathbf{s}\_i)} + e(\mathbf{s}\_i)](https://latex.codecogs.com/svg.image?z%28%5Cmathbf%7Bs%7D_i%29%20%3D%20%5Cboldsymbol%7Ba%7D_i%20%5Cboldsymbol%7Bz%7D_%7B%5Cmathcal%7BN%7D%28%5Cmathbf%7Bs%7D%29%28%5Cmathbf%7Bs%7D_i%29%7D%20%2B%20e%28%5Cmathbf%7Bs%7D_i%29 "z(\mathbf{s}_i) = \boldsymbol{a}_i \boldsymbol{z}_{\mathcal{N}(\mathbf{s})(\mathbf{s}_i)} + e(\mathbf{s}_i)"),
+![z(\mathbf{s}\_i) = \boldsymbol{a}\_i \mathbf{z}\_{\mathcal{N}(\mathbf{s})(\mathbf{s}\_i)} + e(\mathbf{s}\_i)](https://latex.codecogs.com/svg.image?z%28%5Cmathbf%7Bs%7D_i%29%20%3D%20%5Cboldsymbol%7Ba%7D_i%20%5Cmathbf%7Bz%7D_%7B%5Cmathcal%7BN%7D%28%5Cmathbf%7Bs%7D%29%28%5Cmathbf%7Bs%7D_i%29%7D%20%2B%20e%28%5Cmathbf%7Bs%7D_i%29 "z(\mathbf{s}_i) = \boldsymbol{a}_i \mathbf{z}_{\mathcal{N}(\mathbf{s})(\mathbf{s}_i)} + e(\mathbf{s}_i)"),
 where
-![\boldsymbol{a}\_i = \boldsymbol{C}^\top\_{\mathbf{s}\_i,\mathcal{N}(\mathbf{s})(\mathbf{s}\_i)} \boldsymbol{C}\_{\mathcal{N}(\mathbf{s})(\mathbf{s}\_i),\mathcal{N}(\mathbf{s})({\mathbf{s}\_i})}^{-1}](https://latex.codecogs.com/svg.image?%5Cboldsymbol%7Ba%7D_i%20%3D%20%5Cboldsymbol%7BC%7D%5E%5Ctop_%7B%5Cmathbf%7Bs%7D_i%2C%5Cmathcal%7BN%7D%28%5Cmathbf%7Bs%7D%29%28%5Cmathbf%7Bs%7D_i%29%7D%20%5Cboldsymbol%7BC%7D_%7B%5Cmathcal%7BN%7D%28%5Cmathbf%7Bs%7D%29%28%5Cmathbf%7Bs%7D_i%29%2C%5Cmathcal%7BN%7D%28%5Cmathbf%7Bs%7D%29%28%7B%5Cmathbf%7Bs%7D_i%7D%29%7D%5E%7B-1%7D "\boldsymbol{a}_i = \boldsymbol{C}^\top_{\mathbf{s}_i,\mathcal{N}(\mathbf{s})(\mathbf{s}_i)} \boldsymbol{C}_{\mathcal{N}(\mathbf{s})(\mathbf{s}_i),\mathcal{N}(\mathbf{s})({\mathbf{s}_i})}^{-1}")
+![\boldsymbol{a}\_i = \mathbf{C}^\top\_{\mathbf{s}\_i,\mathcal{N}(\mathbf{s})(\mathbf{s}\_i)} \mathbf{C}\_{\mathcal{N}(\mathbf{s})(\mathbf{s}\_i),\mathcal{N}(\mathbf{s})({\mathbf{s}\_i})}^{-1}](https://latex.codecogs.com/svg.image?%5Cboldsymbol%7Ba%7D_i%20%3D%20%5Cmathbf%7BC%7D%5E%5Ctop_%7B%5Cmathbf%7Bs%7D_i%2C%5Cmathcal%7BN%7D%28%5Cmathbf%7Bs%7D%29%28%5Cmathbf%7Bs%7D_i%29%7D%20%5Cmathbf%7BC%7D_%7B%5Cmathcal%7BN%7D%28%5Cmathbf%7Bs%7D%29%28%5Cmathbf%7Bs%7D_i%29%2C%5Cmathcal%7BN%7D%28%5Cmathbf%7Bs%7D%29%28%7B%5Cmathbf%7Bs%7D_i%7D%29%7D%5E%7B-1%7D "\boldsymbol{a}_i = \mathbf{C}^\top_{\mathbf{s}_i,\mathcal{N}(\mathbf{s})(\mathbf{s}_i)} \mathbf{C}_{\mathcal{N}(\mathbf{s})(\mathbf{s}_i),\mathcal{N}(\mathbf{s})({\mathbf{s}_i})}^{-1}")
 and
 ![e(\mathbf{s}\_i) \sim i.i.d\\ \mathcal{N}(0,d\_{i})](https://latex.codecogs.com/svg.image?e%28%5Cmathbf%7Bs%7D_i%29%20%5Csim%20i.i.d%5C%2C%20%5Cmathcal%7BN%7D%280%2Cd_%7Bi%7D%29 "e(\mathbf{s}_i) \sim i.i.d\, \mathcal{N}(0,d_{i})")
 where
 ![d_1 = C\_{\mathbf{s}\_i,\mathbf{s}\_i}](https://latex.codecogs.com/svg.image?d_1%20%3D%20C_%7B%5Cmathbf%7Bs%7D_i%2C%5Cmathbf%7Bs%7D_i%7D "d_1 = C_{\mathbf{s}_i,\mathbf{s}_i}")
 and
-![d_i = \sigma^2\_{z(\mathbf{s}\_i) \mid \boldsymbol{z}\_{\mathcal{N}(\mathbf{s})(\mathbf{s}\_i)}}\\ i=2,\ldots,n](https://latex.codecogs.com/svg.image?d_i%20%3D%20%5Csigma%5E2_%7Bz%28%5Cmathbf%7Bs%7D_i%29%20%5Cmid%20%5Cboldsymbol%7Bz%7D_%7B%5Cmathcal%7BN%7D%28%5Cmathbf%7Bs%7D%29%28%5Cmathbf%7Bs%7D_i%29%7D%7D%5C%3B%20i%3D2%2C%5Cldots%2Cn "d_i = \sigma^2_{z(\mathbf{s}_i) \mid \boldsymbol{z}_{\mathcal{N}(\mathbf{s})(\mathbf{s}_i)}}\; i=2,\ldots,n").
+![d_i = \sigma^2\_{z(\mathbf{s}\_i) \mid \mathbf{z}\_{\mathcal{N}(\mathbf{s})(\mathbf{s}\_i)}}\\ i=2,\ldots,n](https://latex.codecogs.com/svg.image?d_i%20%3D%20%5Csigma%5E2_%7Bz%28%5Cmathbf%7Bs%7D_i%29%20%5Cmid%20%5Cmathbf%7Bz%7D_%7B%5Cmathcal%7BN%7D%28%5Cmathbf%7Bs%7D%29%28%5Cmathbf%7Bs%7D_i%29%7D%7D%5C%3B%20i%3D2%2C%5Cldots%2Cn "d_i = \sigma^2_{z(\mathbf{s}_i) \mid \mathbf{z}_{\mathcal{N}(\mathbf{s})(\mathbf{s}_i)}}\; i=2,\ldots,n").
 
 Therefore, the likelihood in can be written as the following set of
 linear models,
@@ -414,11 +412,11 @@ linear models,
 and for
 ![i=2,\ldots,n](https://latex.codecogs.com/svg.image?i%3D2%2C%5Cldots%2Cn "i=2,\ldots,n"),
 
-![\begin{aligned}
+![\begin{align}
 z(\mathbf{s}\_i) = a\_{i1} z(\mathbf{s}\_1) + a\_{i2} z(\mathbf{s}\_2) + \cdots + a\_{i,i-1} z(\mathbf{s}\_{i-1}) + e(\mathbf{s}\_i).
-\end{aligned}](https://latex.codecogs.com/svg.image?%5Cbegin%7Baligned%7D%0Az%28%5Cmathbf%7Bs%7D_i%29%20%3D%20a_%7Bi1%7D%20z%28%5Cmathbf%7Bs%7D_1%29%20%2B%20a_%7Bi2%7D%20z%28%5Cmathbf%7Bs%7D_2%29%20%2B%20%5Ccdots%20%2B%20a_%7Bi%2Ci-1%7D%20z%28%5Cmathbf%7Bs%7D_%7Bi-1%7D%29%20%2B%20e%28%5Cmathbf%7Bs%7D_i%29.%0A%5Cend%7Baligned%7D "\begin{aligned}
+\end{align}](https://latex.codecogs.com/svg.image?%5Cbegin%7Balign%7D%0Az%28%5Cmathbf%7Bs%7D_i%29%20%3D%20a_%7Bi1%7D%20z%28%5Cmathbf%7Bs%7D_1%29%20%2B%20a_%7Bi2%7D%20z%28%5Cmathbf%7Bs%7D_2%29%20%2B%20%5Ccdots%20%2B%20a_%7Bi%2Ci-1%7D%20z%28%5Cmathbf%7Bs%7D_%7Bi-1%7D%29%20%2B%20e%28%5Cmathbf%7Bs%7D_i%29.%0A%5Cend%7Balign%7D "\begin{align}
 z(\mathbf{s}_i) = a_{i1} z(\mathbf{s}_1) + a_{i2} z(\mathbf{s}_2) + \cdots + a_{i,i-1} z(\mathbf{s}_{i-1}) + e(\mathbf{s}_i).
-\end{aligned}")
+\end{align}")
 
 where
 ![a\_{ij}](https://latex.codecogs.com/svg.image?a_%7Bij%7D "a_{ij}") is
@@ -435,7 +433,7 @@ if
 is not a neighbor of
 ![\mathbf{s}\_i](https://latex.codecogs.com/svg.image?%5Cmathbf%7Bs%7D_i "\mathbf{s}_i").
 In matrix form, it can be written as
-![\boldsymbol{z} = \boldsymbol{A} \boldsymbol{z} + \boldsymbol{e}](https://latex.codecogs.com/svg.image?%5Cboldsymbol%7Bz%7D%20%3D%20%5Cboldsymbol%7BA%7D%20%5Cboldsymbol%7Bz%7D%20%2B%20%5Cboldsymbol%7Be%7D "\boldsymbol{z} = \boldsymbol{A} \boldsymbol{z} + \boldsymbol{e}"),
+![\mathbf{z} = \boldsymbol{A} \mathbf{z} + \boldsymbol{e}](https://latex.codecogs.com/svg.image?%5Cmathbf%7Bz%7D%20%3D%20%5Cboldsymbol%7BA%7D%20%5Cmathbf%7Bz%7D%20%2B%20%5Cboldsymbol%7Be%7D "\mathbf{z} = \boldsymbol{A} \mathbf{z} + \boldsymbol{e}"),
 where
 ![\boldsymbol{A}](https://latex.codecogs.com/svg.image?%5Cboldsymbol%7BA%7D "\boldsymbol{A}")
 is
@@ -450,11 +448,11 @@ is a diagonal with elements
 Therefore,
 ![\mathbf{I}-\boldsymbol{A}](https://latex.codecogs.com/svg.image?%5Cmathbf%7BI%7D-%5Cboldsymbol%7BA%7D "\mathbf{I}-\boldsymbol{A}")
 is a nonsingular matrix and
-![\boldsymbol{z} \sim \mathcal{N}\left(\mathbf{0},(\mathbf{I}-\boldsymbol{A})^{-1}\boldsymbol{D}(\mathbf{I}-\boldsymbol{A})^{-\top}\right)](https://latex.codecogs.com/svg.image?%5Cboldsymbol%7Bz%7D%20%5Csim%20%5Cmathcal%7BN%7D%5Cleft%28%5Cmathbf%7B0%7D%2C%28%5Cmathbf%7BI%7D-%5Cboldsymbol%7BA%7D%29%5E%7B-1%7D%5Cboldsymbol%7BD%7D%28%5Cmathbf%7BI%7D-%5Cboldsymbol%7BA%7D%29%5E%7B-%5Ctop%7D%5Cright%29 "\boldsymbol{z} \sim \mathcal{N}\left(\mathbf{0},(\mathbf{I}-\boldsymbol{A})^{-1}\boldsymbol{D}(\mathbf{I}-\boldsymbol{A})^{-\top}\right)")
+![\mathbf{z} \sim \mathcal{N}\left(\mathbf{0},(\mathbf{I}-\boldsymbol{A})^{-1}\boldsymbol{D}(\mathbf{I}-\boldsymbol{A})^{-\top}\right)](https://latex.codecogs.com/svg.image?%5Cmathbf%7Bz%7D%20%5Csim%20%5Cmathcal%7BN%7D%5Cleft%28%5Cmathbf%7B0%7D%2C%28%5Cmathbf%7BI%7D-%5Cboldsymbol%7BA%7D%29%5E%7B-1%7D%5Cboldsymbol%7BD%7D%28%5Cmathbf%7BI%7D-%5Cboldsymbol%7BA%7D%29%5E%7B-%5Ctop%7D%5Cright%29 "\mathbf{z} \sim \mathcal{N}\left(\mathbf{0},(\mathbf{I}-\boldsymbol{A})^{-1}\boldsymbol{D}(\mathbf{I}-\boldsymbol{A})^{-\top}\right)")
 corresponds to a generative multivariate Gaussian model
-![\boldsymbol{z} \sim \mathcal{N}\left(\mathbf{0},\widetilde{\boldsymbol{C}}\right)](https://latex.codecogs.com/svg.image?%5Cboldsymbol%7Bz%7D%20%5Csim%20%5Cmathcal%7BN%7D%5Cleft%28%5Cmathbf%7B0%7D%2C%5Cwidetilde%7B%5Cboldsymbol%7BC%7D%7D%5Cright%29 "\boldsymbol{z} \sim \mathcal{N}\left(\mathbf{0},\widetilde{\boldsymbol{C}}\right)")
+![\mathbf{z} \sim \mathcal{N}\left(\mathbf{0},\widetilde{\mathbf{C}}\right)](https://latex.codecogs.com/svg.image?%5Cmathbf%7Bz%7D%20%5Csim%20%5Cmathcal%7BN%7D%5Cleft%28%5Cmathbf%7B0%7D%2C%5Cwidetilde%7B%5Cmathbf%7BC%7D%7D%5Cright%29 "\mathbf{z} \sim \mathcal{N}\left(\mathbf{0},\widetilde{\mathbf{C}}\right)")
 for the process realizations, where
-![\widetilde{\boldsymbol{C}} = (\mathbf{I}-\boldsymbol{A})^{-1}\boldsymbol{D}(\mathbf{I}-\boldsymbol{A})^{-\top}](https://latex.codecogs.com/svg.image?%5Cwidetilde%7B%5Cboldsymbol%7BC%7D%7D%20%3D%20%28%5Cmathbf%7BI%7D-%5Cboldsymbol%7BA%7D%29%5E%7B-1%7D%5Cboldsymbol%7BD%7D%28%5Cmathbf%7BI%7D-%5Cboldsymbol%7BA%7D%29%5E%7B-%5Ctop%7D "\widetilde{\boldsymbol{C}} = (\mathbf{I}-\boldsymbol{A})^{-1}\boldsymbol{D}(\mathbf{I}-\boldsymbol{A})^{-\top}")
+![\widetilde{\mathbf{C}} = (\mathbf{I}-\boldsymbol{A})^{-1}\boldsymbol{D}(\mathbf{I}-\boldsymbol{A})^{-\top}](https://latex.codecogs.com/svg.image?%5Cwidetilde%7B%5Cmathbf%7BC%7D%7D%20%3D%20%28%5Cmathbf%7BI%7D-%5Cboldsymbol%7BA%7D%29%5E%7B-1%7D%5Cboldsymbol%7BD%7D%28%5Cmathbf%7BI%7D-%5Cboldsymbol%7BA%7D%29%5E%7B-%5Ctop%7D "\widetilde{\mathbf{C}} = (\mathbf{I}-\boldsymbol{A})^{-1}\boldsymbol{D}(\mathbf{I}-\boldsymbol{A})^{-\top}")
 ([Datta 2022](#ref-datta2022nearest)). Datta et al.
 ([2016](#ref-datta2016hierarchical)) shows that this is a valid
 approximation of the likelihood corresponding to the GP model
@@ -465,7 +463,7 @@ of a valid GP over the entire domain was completed by defining
 prediction distribution of
 ![z(\mathbf{s})](https://latex.codecogs.com/svg.image?z%28%5Cmathbf%7Bs%7D%29 "z(\mathbf{s})")
 at new locations conditional on
-![\boldsymbol{z}](https://latex.codecogs.com/svg.image?%5Cboldsymbol%7Bz%7D "\boldsymbol{z}").
+![\mathbf{z}](https://latex.codecogs.com/svg.image?%5Cmathbf%7Bz%7D "\mathbf{z}").
 
 For the prediction of the latent process
 ![z(\mathbf{s})](https://latex.codecogs.com/svg.image?z%28%5Cmathbf%7Bs%7D%29 "z(\mathbf{s})")
@@ -474,14 +472,17 @@ locations
 ![\\\mathbf{s}\_{01},\ldots,\mathbf{s}\_{0n_0}\\ \notin \\\mathbf{s}\_1,\ldots,\mathbf{s}\_n\\](https://latex.codecogs.com/svg.image?%5C%7B%5Cmathbf%7Bs%7D_%7B01%7D%2C%5Cldots%2C%5Cmathbf%7Bs%7D_%7B0n_0%7D%5C%7D%20%5Cnotin%20%5C%7B%5Cmathbf%7Bs%7D_1%2C%5Cldots%2C%5Cmathbf%7Bs%7D_n%5C%7D "\{\mathbf{s}_{01},\ldots,\mathbf{s}_{0n_0}\} \notin \{\mathbf{s}_1,\ldots,\mathbf{s}_n\}"),
 Datta et al. ([2016](#ref-datta2016hierarchical)) specified the
 conditional distribution of
-![z(\mathbf{s}\_{0i}) \| \boldsymbol{z}](https://latex.codecogs.com/svg.image?z%28%5Cmathbf%7Bs%7D_%7B0i%7D%29%20%7C%20%5Cboldsymbol%7Bz%7D "z(\mathbf{s}_{0i}) | \boldsymbol{z}")
+![z(\mathbf{s}\_{0i}) \| \mathbf{z}](https://latex.codecogs.com/svg.image?z%28%5Cmathbf%7Bs%7D_%7B0i%7D%29%20%7C%20%5Cmathbf%7Bz%7D "z(\mathbf{s}_{0i}) | \mathbf{z}")
 independently, which is given by
+![z(\mathbf{s}\_{0i}) \| \mathbf{z} \sim \mathcal{N}\left(\mu\_{z(\mathbf{s}\_{0i}) \| \mathbf{z}}, \sigma^2\_{z(\mathbf{s}\_{0i}) \| \mathbf{z}}\right)](https://latex.codecogs.com/svg.image?z%28%5Cmathbf%7Bs%7D_%7B0i%7D%29%20%7C%20%5Cmathbf%7Bz%7D%20%5Csim%20%5Cmathcal%7BN%7D%5Cleft%28%5Cmu_%7Bz%28%5Cmathbf%7Bs%7D_%7B0i%7D%29%20%7C%20%5Cmathbf%7Bz%7D%7D%2C%20%5Csigma%5E2_%7Bz%28%5Cmathbf%7Bs%7D_%7B0i%7D%29%20%7C%20%5Cmathbf%7Bz%7D%7D%5Cright%29 "z(\mathbf{s}_{0i}) | \mathbf{z} \sim \mathcal{N}\left(\mu_{z(\mathbf{s}_{0i}) | \mathbf{z}}, \sigma^2_{z(\mathbf{s}_{0i}) | \mathbf{z}}\right)")
 
-![\begin{aligned}
-z(\mathbf{s}\_{0i}) \| \boldsymbol{z} \sim \mathcal{N}\left(\boldsymbol{C}^\top\_{\mathbf{s}\_{0i},\mathcal{N}(\mathbf{s})(\mathbf{s}\_{0i})} \boldsymbol{C}\_{\mathcal{N}(\mathbf{s})(\mathbf{s}\_{0i}),\mathcal{N}(\mathbf{s})(\mathbf{s}\_{0i})}^{-1} \boldsymbol{z}\_{\mathcal{N}(\mathbf{s})(\mathbf{s}\_{0i})}, C\_{\mathbf{s}\_{0i}\\\mathbf{s}\_{0i}} - \boldsymbol{C}^\top\_{\mathbf{s}\_{0i},\mathcal{N}(\mathbf{s})(\mathbf{s}\_{0i})} \boldsymbol{C}\_{\mathcal{N}(\mathbf{s})(\mathbf{s}\_{0i}),\mathcal{N}(\mathbf{s})({\mathbf{s}\_{0i}})}^{-1} \boldsymbol{C}\_{\mathbf{s}\_{0i},\mathcal{N}(\mathbf{s})(\mathbf{s}\_{0i})}\right),
-\end{aligned}](https://latex.codecogs.com/svg.image?%5Cbegin%7Baligned%7D%0Az%28%5Cmathbf%7Bs%7D_%7B0i%7D%29%20%7C%20%5Cboldsymbol%7Bz%7D%20%5Csim%20%5Cmathcal%7BN%7D%5Cleft%28%5Cboldsymbol%7BC%7D%5E%5Ctop_%7B%5Cmathbf%7Bs%7D_%7B0i%7D%2C%5Cmathcal%7BN%7D%28%5Cmathbf%7Bs%7D%29%28%5Cmathbf%7Bs%7D_%7B0i%7D%29%7D%20%5Cboldsymbol%7BC%7D_%7B%5Cmathcal%7BN%7D%28%5Cmathbf%7Bs%7D%29%28%5Cmathbf%7Bs%7D_%7B0i%7D%29%2C%5Cmathcal%7BN%7D%28%5Cmathbf%7Bs%7D%29%28%5Cmathbf%7Bs%7D_%7B0i%7D%29%7D%5E%7B-1%7D%20%5Cboldsymbol%7Bz%7D_%7B%5Cmathcal%7BN%7D%28%5Cmathbf%7Bs%7D%29%28%5Cmathbf%7Bs%7D_%7B0i%7D%29%7D%2C%20C_%7B%5Cmathbf%7Bs%7D_%7B0i%7D%5C%2C%5Cmathbf%7Bs%7D_%7B0i%7D%7D%20-%20%5Cboldsymbol%7BC%7D%5E%5Ctop_%7B%5Cmathbf%7Bs%7D_%7B0i%7D%2C%5Cmathcal%7BN%7D%28%5Cmathbf%7Bs%7D%29%28%5Cmathbf%7Bs%7D_%7B0i%7D%29%7D%20%5Cboldsymbol%7BC%7D_%7B%5Cmathcal%7BN%7D%28%5Cmathbf%7Bs%7D%29%28%5Cmathbf%7Bs%7D_%7B0i%7D%29%2C%5Cmathcal%7BN%7D%28%5Cmathbf%7Bs%7D%29%28%7B%5Cmathbf%7Bs%7D_%7B0i%7D%7D%29%7D%5E%7B-1%7D%20%5Cboldsymbol%7BC%7D_%7B%5Cmathbf%7Bs%7D_%7B0i%7D%2C%5Cmathcal%7BN%7D%28%5Cmathbf%7Bs%7D%29%28%5Cmathbf%7Bs%7D_%7B0i%7D%29%7D%5Cright%29%2C%0A%5Cend%7Baligned%7D "\begin{aligned}
-z(\mathbf{s}_{0i}) | \boldsymbol{z} \sim \mathcal{N}\left(\boldsymbol{C}^\top_{\mathbf{s}_{0i},\mathcal{N}(\mathbf{s})(\mathbf{s}_{0i})} \boldsymbol{C}_{\mathcal{N}(\mathbf{s})(\mathbf{s}_{0i}),\mathcal{N}(\mathbf{s})(\mathbf{s}_{0i})}^{-1} \boldsymbol{z}_{\mathcal{N}(\mathbf{s})(\mathbf{s}_{0i})}, C_{\mathbf{s}_{0i}\,\mathbf{s}_{0i}} - \boldsymbol{C}^\top_{\mathbf{s}_{0i},\mathcal{N}(\mathbf{s})(\mathbf{s}_{0i})} \boldsymbol{C}_{\mathcal{N}(\mathbf{s})(\mathbf{s}_{0i}),\mathcal{N}(\mathbf{s})({\mathbf{s}_{0i}})}^{-1} \boldsymbol{C}_{\mathbf{s}_{0i},\mathcal{N}(\mathbf{s})(\mathbf{s}_{0i})}\right),
-\end{aligned}")
+![\begin{align}
+\sigma^2\_{z(\mathbf{s}\_{0i}) \| \mathbf{z}} &= \mathbf{C}^\top\_{\mathbf{s}\_{0i},\mathcal{N}(\mathbf{s})(\mathbf{s}\_{0i})} \mathbf{C}\_{\mathcal{N}(\mathbf{s})(\mathbf{s}\_{0i})\\
+\sigma^2\_{z(\mathbf{s}\_{0i}) \| \mathbf{z}} &= \mathcal{N}(\mathbf{s})(\mathbf{s}\_{0i})}^{-1} \mathbf{z}\_{\mathcal{N}(\mathbf{s})(\mathbf{s}\_{0i})}, C\_{\mathbf{s}\_{0i}\\\mathbf{s}\_{0i}} - \mathbf{C}^\top\_{\mathbf{s}\_{0i},\mathcal{N}(\mathbf{s})(\mathbf{s}\_{0i})} \mathbf{C}\_{\mathcal{N}(\mathbf{s})(\mathbf{s}\_{0i}),\mathcal{N}(\mathbf{s})({\mathbf{s}\_{0i}})}^{-1} \mathbf{C}\_{\mathbf{s}\_{0i},\mathcal{N}(\mathbf{s})(\mathbf{s}\_{0i})}\right),
+\end{align}](https://latex.codecogs.com/svg.image?%5Cbegin%7Balign%7D%0A%5Csigma%5E2_%7Bz%28%5Cmathbf%7Bs%7D_%7B0i%7D%29%20%7C%20%5Cmathbf%7Bz%7D%7D%20%26%3D%20%5Cmathbf%7BC%7D%5E%5Ctop_%7B%5Cmathbf%7Bs%7D_%7B0i%7D%2C%5Cmathcal%7BN%7D%28%5Cmathbf%7Bs%7D%29%28%5Cmathbf%7Bs%7D_%7B0i%7D%29%7D%20%5Cmathbf%7BC%7D_%7B%5Cmathcal%7BN%7D%28%5Cmathbf%7Bs%7D%29%28%5Cmathbf%7Bs%7D_%7B0i%7D%29%5C%5C%0A%5Csigma%5E2_%7Bz%28%5Cmathbf%7Bs%7D_%7B0i%7D%29%20%7C%20%5Cmathbf%7Bz%7D%7D%20%26%3D%20%5Cmathcal%7BN%7D%28%5Cmathbf%7Bs%7D%29%28%5Cmathbf%7Bs%7D_%7B0i%7D%29%7D%5E%7B-1%7D%20%5Cmathbf%7Bz%7D_%7B%5Cmathcal%7BN%7D%28%5Cmathbf%7Bs%7D%29%28%5Cmathbf%7Bs%7D_%7B0i%7D%29%7D%2C%20C_%7B%5Cmathbf%7Bs%7D_%7B0i%7D%5C%2C%5Cmathbf%7Bs%7D_%7B0i%7D%7D%20-%20%5Cmathbf%7BC%7D%5E%5Ctop_%7B%5Cmathbf%7Bs%7D_%7B0i%7D%2C%5Cmathcal%7BN%7D%28%5Cmathbf%7Bs%7D%29%28%5Cmathbf%7Bs%7D_%7B0i%7D%29%7D%20%5Cmathbf%7BC%7D_%7B%5Cmathcal%7BN%7D%28%5Cmathbf%7Bs%7D%29%28%5Cmathbf%7Bs%7D_%7B0i%7D%29%2C%5Cmathcal%7BN%7D%28%5Cmathbf%7Bs%7D%29%28%7B%5Cmathbf%7Bs%7D_%7B0i%7D%7D%29%7D%5E%7B-1%7D%20%5Cmathbf%7BC%7D_%7B%5Cmathbf%7Bs%7D_%7B0i%7D%2C%5Cmathcal%7BN%7D%28%5Cmathbf%7Bs%7D%29%28%5Cmathbf%7Bs%7D_%7B0i%7D%29%7D%5Cright%29%2C%0A%5Cend%7Balign%7D "\begin{align}
+\sigma^2_{z(\mathbf{s}_{0i}) | \mathbf{z}} &= \mathbf{C}^\top_{\mathbf{s}_{0i},\mathcal{N}(\mathbf{s})(\mathbf{s}_{0i})} \mathbf{C}_{\mathcal{N}(\mathbf{s})(\mathbf{s}_{0i})\\
+\sigma^2_{z(\mathbf{s}_{0i}) | \mathbf{z}} &= \mathcal{N}(\mathbf{s})(\mathbf{s}_{0i})}^{-1} \mathbf{z}_{\mathcal{N}(\mathbf{s})(\mathbf{s}_{0i})}, C_{\mathbf{s}_{0i}\,\mathbf{s}_{0i}} - \mathbf{C}^\top_{\mathbf{s}_{0i},\mathcal{N}(\mathbf{s})(\mathbf{s}_{0i})} \mathbf{C}_{\mathcal{N}(\mathbf{s})(\mathbf{s}_{0i}),\mathcal{N}(\mathbf{s})({\mathbf{s}_{0i}})}^{-1} \mathbf{C}_{\mathbf{s}_{0i},\mathcal{N}(\mathbf{s})(\mathbf{s}_{0i})}\right),
+\end{align}")
 
 where the
 ![\mathcal{N}(\mathbf{s})(\mathbf{s}\_{0i})](https://latex.codecogs.com/svg.image?%5Cmathcal%7BN%7D%28%5Cmathbf%7Bs%7D%29%28%5Cmathbf%7Bs%7D_%7B0i%7D%29 "\mathcal{N}(\mathbf{s})(\mathbf{s}_{0i})")
@@ -517,9 +518,9 @@ parameters of the latent NNGP improves the MCMC efficiency by
 implementing it in Stan.
 
 This implies that the model
-![\mathcal{N}\left(z(\mathbf{s}\_i) \| \mu\_{z(\mathbf{s}\_i) \mid \boldsymbol{z}\_{\mathcal{N}(\mathbf{s})(\mathbf{s}\_i)}}, \sigma^2\_{z(\mathbf{s}\_i) \mid \boldsymbol{z}\_{\mathcal{N}(\mathbf{s})(\mathbf{s}\_i)}}\right)](https://latex.codecogs.com/svg.image?%5Cmathcal%7BN%7D%5Cleft%28z%28%5Cmathbf%7Bs%7D_i%29%20%7C%20%5Cmu_%7Bz%28%5Cmathbf%7Bs%7D_i%29%20%5Cmid%20%5Cboldsymbol%7Bz%7D_%7B%5Cmathcal%7BN%7D%28%5Cmathbf%7Bs%7D%29%28%5Cmathbf%7Bs%7D_i%29%7D%7D%2C%20%5Csigma%5E2_%7Bz%28%5Cmathbf%7Bs%7D_i%29%20%5Cmid%20%5Cboldsymbol%7Bz%7D_%7B%5Cmathcal%7BN%7D%28%5Cmathbf%7Bs%7D%29%28%5Cmathbf%7Bs%7D_i%29%7D%7D%5Cright%29 "\mathcal{N}\left(z(\mathbf{s}_i) | \mu_{z(\mathbf{s}_i) \mid \boldsymbol{z}_{\mathcal{N}(\mathbf{s})(\mathbf{s}_i)}}, \sigma^2_{z(\mathbf{s}_i) \mid \boldsymbol{z}_{\mathcal{N}(\mathbf{s})(\mathbf{s}_i)}}\right)")
+![\mathcal{N}\left(z(\mathbf{s}\_i) \| \mu\_{z(\mathbf{s}\_i) \mid \mathbf{z}\_{\mathcal{N}(\mathbf{s})(\mathbf{s}\_i)}}, \sigma^2\_{z(\mathbf{s}\_i) \mid \mathbf{z}\_{\mathcal{N}(\mathbf{s})(\mathbf{s}\_i)}}\right)](https://latex.codecogs.com/svg.image?%5Cmathcal%7BN%7D%5Cleft%28z%28%5Cmathbf%7Bs%7D_i%29%20%7C%20%5Cmu_%7Bz%28%5Cmathbf%7Bs%7D_i%29%20%5Cmid%20%5Cmathbf%7Bz%7D_%7B%5Cmathcal%7BN%7D%28%5Cmathbf%7Bs%7D%29%28%5Cmathbf%7Bs%7D_i%29%7D%7D%2C%20%5Csigma%5E2_%7Bz%28%5Cmathbf%7Bs%7D_i%29%20%5Cmid%20%5Cmathbf%7Bz%7D_%7B%5Cmathcal%7BN%7D%28%5Cmathbf%7Bs%7D%29%28%5Cmathbf%7Bs%7D_i%29%7D%7D%5Cright%29 "\mathcal{N}\left(z(\mathbf{s}_i) | \mu_{z(\mathbf{s}_i) \mid \mathbf{z}_{\mathcal{N}(\mathbf{s})(\mathbf{s}_i)}}, \sigma^2_{z(\mathbf{s}_i) \mid \mathbf{z}_{\mathcal{N}(\mathbf{s})(\mathbf{s}_i)}}\right)")
 in is parameterized as
-![z(\mathbf{s}\_i) \|  z\_{\mathcal{N}(\mathbf{s})(\mathbf{s}\_i)} = \mu\_{z(\mathbf{s}\_i) \mid \boldsymbol{z}\_{\mathcal{N}(\mathbf{s})(\mathbf{s}\_i)}} + \sigma\_{z(\mathbf{s}\_i) \mid \boldsymbol{z}\_{\mathcal{N}(\mathbf{s})(\mathbf{s}\_i)}} v(\mathbf{s}\_i)](https://latex.codecogs.com/svg.image?z%28%5Cmathbf%7Bs%7D_i%29%20%7C%20%20z_%7B%5Cmathcal%7BN%7D%28%5Cmathbf%7Bs%7D%29%28%5Cmathbf%7Bs%7D_i%29%7D%20%3D%20%5Cmu_%7Bz%28%5Cmathbf%7Bs%7D_i%29%20%5Cmid%20%5Cboldsymbol%7Bz%7D_%7B%5Cmathcal%7BN%7D%28%5Cmathbf%7Bs%7D%29%28%5Cmathbf%7Bs%7D_i%29%7D%7D%20%2B%20%5Csigma_%7Bz%28%5Cmathbf%7Bs%7D_i%29%20%5Cmid%20%5Cboldsymbol%7Bz%7D_%7B%5Cmathcal%7BN%7D%28%5Cmathbf%7Bs%7D%29%28%5Cmathbf%7Bs%7D_i%29%7D%7D%20v%28%5Cmathbf%7Bs%7D_i%29 "z(\mathbf{s}_i) |  z_{\mathcal{N}(\mathbf{s})(\mathbf{s}_i)} = \mu_{z(\mathbf{s}_i) \mid \boldsymbol{z}_{\mathcal{N}(\mathbf{s})(\mathbf{s}_i)}} + \sigma_{z(\mathbf{s}_i) \mid \boldsymbol{z}_{\mathcal{N}(\mathbf{s})(\mathbf{s}_i)}} v(\mathbf{s}_i)")
+![z(\mathbf{s}\_i) \|  z\_{\mathcal{N}(\mathbf{s})(\mathbf{s}\_i)} = \mu\_{z(\mathbf{s}\_i) \mid \mathbf{z}\_{\mathcal{N}(\mathbf{s})(\mathbf{s}\_i)}} + \sigma\_{z(\mathbf{s}\_i) \mid \mathbf{z}\_{\mathcal{N}(\mathbf{s})(\mathbf{s}\_i)}} v(\mathbf{s}\_i)](https://latex.codecogs.com/svg.image?z%28%5Cmathbf%7Bs%7D_i%29%20%7C%20%20z_%7B%5Cmathcal%7BN%7D%28%5Cmathbf%7Bs%7D%29%28%5Cmathbf%7Bs%7D_i%29%7D%20%3D%20%5Cmu_%7Bz%28%5Cmathbf%7Bs%7D_i%29%20%5Cmid%20%5Cmathbf%7Bz%7D_%7B%5Cmathcal%7BN%7D%28%5Cmathbf%7Bs%7D%29%28%5Cmathbf%7Bs%7D_i%29%7D%7D%20%2B%20%5Csigma_%7Bz%28%5Cmathbf%7Bs%7D_i%29%20%5Cmid%20%5Cmathbf%7Bz%7D_%7B%5Cmathcal%7BN%7D%28%5Cmathbf%7Bs%7D%29%28%5Cmathbf%7Bs%7D_i%29%7D%7D%20v%28%5Cmathbf%7Bs%7D_i%29 "z(\mathbf{s}_i) |  z_{\mathcal{N}(\mathbf{s})(\mathbf{s}_i)} = \mu_{z(\mathbf{s}_i) \mid \mathbf{z}_{\mathcal{N}(\mathbf{s})(\mathbf{s}_i)}} + \sigma_{z(\mathbf{s}_i) \mid \mathbf{z}_{\mathcal{N}(\mathbf{s})(\mathbf{s}_i)}} v(\mathbf{s}_i)")
 where
 ![v(\mathbf{s}\_i)](https://latex.codecogs.com/svg.image?v%28%5Cmathbf%7Bs%7D_i%29 "v(\mathbf{s}_i)")
 is independent Gaussian noise with mean zero and variance one.
@@ -530,7 +531,7 @@ process surface through pointwise prediction. Suppose that a vector of
 ![\mathbf{x}(\mathbf{s}\_0)](https://latex.codecogs.com/svg.image?%5Cmathbf%7Bx%7D%28%5Cmathbf%7Bs%7D_0%29 "\mathbf{x}(\mathbf{s}_0)")
 at a generic prediction location
 ![\mathbf{s}\_0 \in \mathcal{D}](https://latex.codecogs.com/svg.image?%5Cmathbf%7Bs%7D_0%20%5Cin%20%5Cmathcal%7BD%7D "\mathbf{s}_0 \in \mathcal{D}")
-is available. Following model , the posterior predictive distribution of
+is available. Following model, the posterior predictive distribution of
 ![y(\mathbf{s})](https://latex.codecogs.com/svg.image?y%28%5Cmathbf%7Bs%7D%29 "y(\mathbf{s})")
 at
 ![\mathbf{s}\_0](https://latex.codecogs.com/svg.image?%5Cmathbf%7Bs%7D_0 "\mathbf{s}_0")
@@ -575,13 +576,13 @@ at any unobserved location
 ![\mathbf{s}\_0 \in \mathcal{D}](https://latex.codecogs.com/svg.image?%5Cmathbf%7Bs%7D_0%20%5Cin%20%5Cmathcal%7BD%7D "\mathbf{s}_0 \in \mathcal{D}")
 is given by
 
-![\begin{aligned}
+![\begin{align}
 \pi(y(\mathbf{s}\_0) \mid \mathbf{y}) &= \int \mathcal{N}\left(y(\mathbf{s}\_0) \mid \mu\_{y(\mathbf{s}\_0)\mid \mathbf{y}}, \sigma^2\_{y(\mathbf{s}\_0) \mid \mathbf{y}} \right)\\ \pi(z_1(\mathbf{s}\_0) \mid \mathbf{z}\_1, \sigma_1, \ell_1)\\
 & \pi(\boldsymbol{\Theta}, \mathbf{z}\_1 \mid \mathbf{y}) \\ dz_1(\mathbf{s}\_0)\\ d\mathbf{z}\_1 \\ d\boldsymbol{\Theta},
-\end{aligned}](https://latex.codecogs.com/svg.image?%5Cbegin%7Baligned%7D%0A%5Cpi%28y%28%5Cmathbf%7Bs%7D_0%29%20%5Cmid%20%5Cmathbf%7By%7D%29%20%26%3D%20%5Cint%20%5Cmathcal%7BN%7D%5Cleft%28y%28%5Cmathbf%7Bs%7D_0%29%20%5Cmid%20%5Cmu_%7By%28%5Cmathbf%7Bs%7D_0%29%5Cmid%20%5Cmathbf%7By%7D%7D%2C%20%5Csigma%5E2_%7By%28%5Cmathbf%7Bs%7D_0%29%20%5Cmid%20%5Cmathbf%7By%7D%7D%20%5Cright%29%5C%3B%20%5Cpi%28z_1%28%5Cmathbf%7Bs%7D_0%29%20%5Cmid%20%5Cmathbf%7Bz%7D_1%2C%20%5Csigma_1%2C%20%5Cell_1%29%5C%5C%0A%26%20%5Cpi%28%5Cboldsymbol%7B%5CTheta%7D%2C%20%5Cmathbf%7Bz%7D_1%20%5Cmid%20%5Cmathbf%7By%7D%29%20%5C%3B%20dz_1%28%5Cmathbf%7Bs%7D_0%29%5C%3B%20d%5Cmathbf%7Bz%7D_1%20%5C%3B%20d%5Cboldsymbol%7B%5CTheta%7D%2C%0A%5Cend%7Baligned%7D "\begin{aligned}
+\end{align}](https://latex.codecogs.com/svg.image?%5Cbegin%7Balign%7D%0A%5Cpi%28y%28%5Cmathbf%7Bs%7D_0%29%20%5Cmid%20%5Cmathbf%7By%7D%29%20%26%3D%20%5Cint%20%5Cmathcal%7BN%7D%5Cleft%28y%28%5Cmathbf%7Bs%7D_0%29%20%5Cmid%20%5Cmu_%7By%28%5Cmathbf%7Bs%7D_0%29%5Cmid%20%5Cmathbf%7By%7D%7D%2C%20%5Csigma%5E2_%7By%28%5Cmathbf%7Bs%7D_0%29%20%5Cmid%20%5Cmathbf%7By%7D%7D%20%5Cright%29%5C%3B%20%5Cpi%28z_1%28%5Cmathbf%7Bs%7D_0%29%20%5Cmid%20%5Cmathbf%7Bz%7D_1%2C%20%5Csigma_1%2C%20%5Cell_1%29%5C%5C%0A%26%20%5Cpi%28%5Cboldsymbol%7B%5CTheta%7D%2C%20%5Cmathbf%7Bz%7D_1%20%5Cmid%20%5Cmathbf%7By%7D%29%20%5C%3B%20dz_1%28%5Cmathbf%7Bs%7D_0%29%5C%3B%20d%5Cmathbf%7Bz%7D_1%20%5C%3B%20d%5Cboldsymbol%7B%5CTheta%7D%2C%0A%5Cend%7Balign%7D "\begin{align}
 \pi(y(\mathbf{s}_0) \mid \mathbf{y}) &= \int \mathcal{N}\left(y(\mathbf{s}_0) \mid \mu_{y(\mathbf{s}_0)\mid \mathbf{y}}, \sigma^2_{y(\mathbf{s}_0) \mid \mathbf{y}} \right)\; \pi(z_1(\mathbf{s}_0) \mid \mathbf{z}_1, \sigma_1, \ell_1)\\
 & \pi(\boldsymbol{\Theta}, \mathbf{z}_1 \mid \mathbf{y}) \; dz_1(\mathbf{s}_0)\; d\mathbf{z}_1 \; d\boldsymbol{\Theta},
-\end{aligned}")
+\end{align}")
 
 which also does not have a closed form and composition sampling is used
 to obtain samples from
@@ -657,6 +658,111 @@ at prediction location
 ![\mathbf{s}\_0](https://latex.codecogs.com/svg.image?%5Cmathbf%7Bs%7D_0 "\mathbf{s}_0")
 depend on how the latent processes are approximated. In what follows, we
 describe the procedure under each approximating method.
+
+## 1.4 Response NNGP in Stan
+
+    functions {
+
+    real responseNNGP_matern32_lpdf(vector y, vector mu, real sigma, real tau, real lscale, matrix site2neiDist, matrix neiDistMat, array[,] int neiID, int n, int m) {
+        
+        vector[n] V;
+        vector[n] resid = y - mu;
+        vector[n] U = resid;
+        real tausq = square(tau);
+        real sigmasq = square(sigma);
+        
+        real variance_ratio_plus_1 = tausq * inv(sigmasq) + 1; // variance ratio plus 1
+        int h;
+        for (i in 2:n) {
+          int dim = (i < (m + 1))? (i - 1) : m;
+          matrix[dim, dim] neiCorMat;
+          matrix[dim, dim] neiCorChol;
+          vector[dim] site2neiCor;
+          vector[dim] v;
+          row_vector[dim] v2;
+          
+          if(dim == 1){
+            neiCorMat[1, 1] = variance_ratio_plus_1;
+            } else {
+              h = 0;
+              for (j in 1:(dim - 1)){
+                for (k in (j + 1):dim){
+                  h = h + 1;
+                  neiCorMat[j, k] = (1 + sqrt(3) * neiDistMat[(i - 1), h] * inv(lscale)) * exp(-sqrt(3) * neiDistMat[(i - 1), h] * inv(lscale));
+                  neiCorMat[k, j] = neiCorMat[j, k];
+                  }
+                }
+                for(j in 1:dim){
+                  neiCorMat[j, j] = variance_ratio_plus_1;
+                }
+            }
+
+            neiCorChol = cholesky_decompose(add_diag(neiCorMat, 1e-7));
+            site2neiCor = to_vector((1 + sqrt(3) * site2neiDist[(i - 1), 1: dim] * inv(lscale)) .* exp(-sqrt(3) * site2neiDist[(i - 1), 1: dim] * inv(lscale)));
+            v = mdivide_left_tri_low(neiCorChol, site2neiCor);
+            V[i] = variance_ratio_plus_1 - dot_self(v);
+            v2 = mdivide_right_tri_low(v', neiCorChol);
+            U[i] = U[i] - v2 * resid[neiID[(i - 1), 1:dim]];
+            }
+            V[1] = variance_ratio_plus_1;
+            return - 0.5 * ( 1 / sigmasq * dot_product(U, (U ./ V)) + sum(log(V)) + n * log(sigmasq));
+          }
+     
+    }
+
+
+    data{
+      int n;
+      int m;
+      int p;
+      vector[n] y;
+      matrix[n,p] X;
+      
+      vector<lower=0>[p] theta_multiplier;
+      real<lower = 0> tau_multiplier;
+      real<lower = 0> sigma_multiplier;
+      
+      real<lower = 0> a; // Shape parameters in the prior for ell
+      real<lower = 0> b; // Scale parameters in the prior for ell
+      
+      array[n-1, m] int neiID;
+      matrix[n-1, m] site2neiDist;
+      matrix[n-1, (m*(m-1))%/%2] neiDistMat;
+      array[n-1] int nNei;
+
+    }
+
+    transformed data {
+    }
+
+    parameters {
+      vector[p] theta_std;
+      real<lower=0> tau_std;
+      real<lower=0> ell;
+      real<lower=0> sigma_std;
+    }
+
+    transformed parameters{
+      vector[p] theta = theta_multiplier .* theta_std;
+      real tau = tau_multiplier * tau_std;
+      real sigma = sigma_multiplier * sigma_std;
+    }
+
+
+    model {
+      theta_std ~ std_normal();
+      tau_std ~ std_normal();
+      sigma_std ~ std_normal();
+      ell ~ inv_gamma(a,b);
+      
+      vector[n] mu = X*theta;
+      target += responseNNGP_matern32_lpdf(y | mu, sigma, tau, ell, site2neiDist, neiDistMat, neiID, n, m);
+      
+    }
+
+    generated quantities{
+      
+    }
 
 ## 1.5 References
 
