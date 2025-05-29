@@ -99,7 +99,7 @@ args(multi_conditional_normal_rng)
 l <- 1
 
 ## Prediction of latent value
-draws_predz_list <- lapply(1:size_post_samples, function(l){
+draws_pred_z_list <- lapply(1:size_post_samples, function(l){
   
   V11 <- exposed_exponential_cov(
     coords = lapply(1:nrow(pred_coords), function(i) pred_coords[i,]),
@@ -114,19 +114,19 @@ draws_predz_list <- lapply(1:size_post_samples, function(l){
     coords2 = lapply(1:nrow(input$coords), function(i) input$coords[i,]),
     sigma = post_sigma[l], length_scale = post_ell[l])
   
-  predz <- multi_conditional_normal_rng(y2 = post_z[l,], mu1 = rep(0,4), mu2 = rep(0,input$n), V11 = V11, V12 = V12,  V22 = V22)
+  pred_z <- multi_conditional_normal_rng(y2 = post_z[l,], mu1 = rep(0,4), mu2 = rep(0,input$n), V11 = V11, V12 = V12,  V22 = V22)
   
-  return(predz)
+  return(pred_z)
 })
 
-draws_predz <- do.call(rbind, draws_predz_list)
-str(draws_predz)
-draws_predz_df <- as_tibble(draws_predz, .name_repair = ~paste0(1:4))
-draws_predz_df
+draws_pred_z <- do.call(rbind, draws_pred_z_list)
+str(draws_pred_z)
+draws_pred_z_df <- as_tibble(draws_pred_z, .name_repair = ~paste0(1:4))
+draws_pred_z_df
 
 draws_pred_y_list <- lapply(1:size_post_samples, function(l){
   
-  mean_pred <- drop(pred_X %*% post_theta[l,]) + draws_predz_list[[l]]
+  mean_pred <- drop(pred_X %*% post_theta[l,]) + draws_pred_z_list[[l]]
   pred <- rnorm(n = 4, mean =  mean_pred, sd = post_tau[l])
   
   return(pred)
@@ -144,6 +144,4 @@ draws_pred_y_df %>%
   facet_wrap(~pred_loc_id, scales = "free_y", labeller = label_bquote(Prediction~Location~.(pred_loc_id))) +
   theme_bw() +
   theme(strip.background = element_blank())
-
-
 

@@ -48,9 +48,9 @@ is proportional to
 
 ![\begin{align}
 \pi(\boldsymbol{\Phi} \mid \mathbf{y}) \propto \mathcal{N}\left(\mathbf{y} \mid \mathbf{X}\boldsymbol{\theta}, \mathbf{V}\right) \\ \pi(\boldsymbol{\Phi}),
-end{align}](https://latex.codecogs.com/svg.image?%5Cbegin%7Balign%7D%0A%5Cpi%28%5Cboldsymbol%7B%5CPhi%7D%20%5Cmid%20%5Cmathbf%7By%7D%29%20%5Cpropto%20%5Cmathcal%7BN%7D%5Cleft%28%5Cmathbf%7By%7D%20%5Cmid%20%5Cmathbf%7BX%7D%5Cboldsymbol%7B%5Ctheta%7D%2C%20%5Cmathbf%7BV%7D%5Cright%29%20%5C%3B%20%5Cpi%28%5Cboldsymbol%7B%5CPhi%7D%29%2C%0Aend%7Balign%7D "\begin{align}
+\end{align}](https://latex.codecogs.com/svg.image?%5Cbegin%7Balign%7D%0A%5Cpi%28%5Cboldsymbol%7B%5CPhi%7D%20%5Cmid%20%5Cmathbf%7By%7D%29%20%5Cpropto%20%5Cmathcal%7BN%7D%5Cleft%28%5Cmathbf%7By%7D%20%5Cmid%20%5Cmathbf%7BX%7D%5Cboldsymbol%7B%5Ctheta%7D%2C%20%5Cmathbf%7BV%7D%5Cright%29%20%5C%3B%20%5Cpi%28%5Cboldsymbol%7B%5CPhi%7D%29%2C%0A%5Cend%7Balign%7D "\begin{align}
 \pi(\boldsymbol{\Phi} \mid \mathbf{y}) \propto \mathcal{N}\left(\mathbf{y} \mid \mathbf{X}\boldsymbol{\theta}, \mathbf{V}\right) \; \pi(\boldsymbol{\Phi}),
-end{align}")
+\end{align}")
 
 where
 ![\mathbf{V} = \sigma^2 \mathbf{B} + \tau^2\mathbf{I}](https://latex.codecogs.com/svg.image?%5Cmathbf%7BV%7D%20%3D%20%5Csigma%5E2%20%5Cmathbf%7BB%7D%20%2B%20%5Ctau%5E2%5Cmathbf%7BI%7D "\mathbf{V} = \sigma^2 \mathbf{B} + \tau^2\mathbf{I}")
@@ -241,9 +241,9 @@ and variance
       matrix[n,p] X;
       array[n] vector[2] coords;
       
-      vector<lower=0>[p] theta_multiplier;
-      real<lower=0> sigma_multiplier;
-      real<lower=0> tau_multiplier;
+      vector<lower=0>[p] scale_theta;
+      real<lower=0> scale_sigma;
+      real<lower=0> scale_tau;
       
       real<lower = 0> a; // Shape parameters in the prior for ell
       real<lower = 0> b; // Scale parameters in the prior for ell
@@ -262,9 +262,9 @@ and variance
     }
 
     transformed parameters{
-      vector[p] theta = theta_multiplier .* theta_std;
-      real sigma = sigma_multiplier * sigma_std;
-      real tau = sigma_multiplier * tau_std;
+      vector[p] theta = scale_theta .* theta_std;
+      real sigma = scale_sigma * sigma_std;
+      real tau = scale_sigma * tau_std;
     }
 
     model {
@@ -465,14 +465,19 @@ Datta et al. ([2016](#ref-datta2016hierarchical)) specified the
 conditional distribution of
 ![z(\mathbf{s}\_{0i}) \| \mathbf{z}](https://latex.codecogs.com/svg.image?z%28%5Cmathbf%7Bs%7D_%7B0i%7D%29%20%7C%20%5Cmathbf%7Bz%7D "z(\mathbf{s}_{0i}) | \mathbf{z}")
 independently, which is given by
-![z(\mathbf{s}\_{0i}) \| \mathbf{z} \sim \mathcal{N}\left(\mu\_{z(\mathbf{s}\_{0i}) \| \mathbf{z}}, \sigma^2\_{z(\mathbf{s}\_{0i}) \| \mathbf{z}}\right)](https://latex.codecogs.com/svg.image?z%28%5Cmathbf%7Bs%7D_%7B0i%7D%29%20%7C%20%5Cmathbf%7Bz%7D%20%5Csim%20%5Cmathcal%7BN%7D%5Cleft%28%5Cmu_%7Bz%28%5Cmathbf%7Bs%7D_%7B0i%7D%29%20%7C%20%5Cmathbf%7Bz%7D%7D%2C%20%5Csigma%5E2_%7Bz%28%5Cmathbf%7Bs%7D_%7B0i%7D%29%20%7C%20%5Cmathbf%7Bz%7D%7D%5Cright%29 "z(\mathbf{s}_{0i}) | \mathbf{z} \sim \mathcal{N}\left(\mu_{z(\mathbf{s}_{0i}) | \mathbf{z}}, \sigma^2_{z(\mathbf{s}_{0i}) | \mathbf{z}}\right)")
+![z(\mathbf{s}\_{0i}) \| \mathbf{z} \sim \mathcal{N}\left(\mu\_{z(\mathbf{s}\_{0i}) \| \mathbf{z}}, \sigma^2\_{z(\mathbf{s}\_{0i}) \| \mathbf{z}}\right)](https://latex.codecogs.com/svg.image?z%28%5Cmathbf%7Bs%7D_%7B0i%7D%29%20%7C%20%5Cmathbf%7Bz%7D%20%5Csim%20%5Cmathcal%7BN%7D%5Cleft%28%5Cmu_%7Bz%28%5Cmathbf%7Bs%7D_%7B0i%7D%29%20%7C%20%5Cmathbf%7Bz%7D%7D%2C%20%5Csigma%5E2_%7Bz%28%5Cmathbf%7Bs%7D_%7B0i%7D%29%20%7C%20%5Cmathbf%7Bz%7D%7D%5Cright%29 "z(\mathbf{s}_{0i}) | \mathbf{z} \sim \mathcal{N}\left(\mu_{z(\mathbf{s}_{0i}) | \mathbf{z}}, \sigma^2_{z(\mathbf{s}_{0i}) | \mathbf{z}}\right)"),
+where
 
 ![\begin{align}
-\sigma^2\_{z(\mathbf{s}\_{0i}) \| \mathbf{z}} &= \mathbf{C}^\top\_{\mathbf{s}\_{0i},\mathcal{N}(\mathbf{s})(\mathbf{s}\_{0i})} \mathbf{C}\_{\mathcal{N}(\mathbf{s})(\mathbf{s}\_{0i})\\
-\sigma^2\_{z(\mathbf{s}\_{0i}) \| \mathbf{z}} &= \mathcal{N}(\mathbf{s})(\mathbf{s}\_{0i})}^{-1} \mathbf{z}\_{\mathcal{N}(\mathbf{s})(\mathbf{s}\_{0i})}, C\_{\mathbf{s}\_{0i}\\\mathbf{s}\_{0i}} - \mathbf{C}^\top\_{\mathbf{s}\_{0i},\mathcal{N}(\mathbf{s})(\mathbf{s}\_{0i})} \mathbf{C}\_{\mathcal{N}(\mathbf{s})(\mathbf{s}\_{0i}),\mathcal{N}(\mathbf{s})({\mathbf{s}\_{0i}})}^{-1} \mathbf{C}\_{\mathbf{s}\_{0i},\mathcal{N}(\mathbf{s})(\mathbf{s}\_{0i})}\right),
-\end{align}](https://latex.codecogs.com/svg.image?%5Cbegin%7Balign%7D%0A%5Csigma%5E2_%7Bz%28%5Cmathbf%7Bs%7D_%7B0i%7D%29%20%7C%20%5Cmathbf%7Bz%7D%7D%20%26%3D%20%5Cmathbf%7BC%7D%5E%5Ctop_%7B%5Cmathbf%7Bs%7D_%7B0i%7D%2C%5Cmathcal%7BN%7D%28%5Cmathbf%7Bs%7D%29%28%5Cmathbf%7Bs%7D_%7B0i%7D%29%7D%20%5Cmathbf%7BC%7D_%7B%5Cmathcal%7BN%7D%28%5Cmathbf%7Bs%7D%29%28%5Cmathbf%7Bs%7D_%7B0i%7D%29%5C%5C%0A%5Csigma%5E2_%7Bz%28%5Cmathbf%7Bs%7D_%7B0i%7D%29%20%7C%20%5Cmathbf%7Bz%7D%7D%20%26%3D%20%5Cmathcal%7BN%7D%28%5Cmathbf%7Bs%7D%29%28%5Cmathbf%7Bs%7D_%7B0i%7D%29%7D%5E%7B-1%7D%20%5Cmathbf%7Bz%7D_%7B%5Cmathcal%7BN%7D%28%5Cmathbf%7Bs%7D%29%28%5Cmathbf%7Bs%7D_%7B0i%7D%29%7D%2C%20C_%7B%5Cmathbf%7Bs%7D_%7B0i%7D%5C%2C%5Cmathbf%7Bs%7D_%7B0i%7D%7D%20-%20%5Cmathbf%7BC%7D%5E%5Ctop_%7B%5Cmathbf%7Bs%7D_%7B0i%7D%2C%5Cmathcal%7BN%7D%28%5Cmathbf%7Bs%7D%29%28%5Cmathbf%7Bs%7D_%7B0i%7D%29%7D%20%5Cmathbf%7BC%7D_%7B%5Cmathcal%7BN%7D%28%5Cmathbf%7Bs%7D%29%28%5Cmathbf%7Bs%7D_%7B0i%7D%29%2C%5Cmathcal%7BN%7D%28%5Cmathbf%7Bs%7D%29%28%7B%5Cmathbf%7Bs%7D_%7B0i%7D%7D%29%7D%5E%7B-1%7D%20%5Cmathbf%7BC%7D_%7B%5Cmathbf%7Bs%7D_%7B0i%7D%2C%5Cmathcal%7BN%7D%28%5Cmathbf%7Bs%7D%29%28%5Cmathbf%7Bs%7D_%7B0i%7D%29%7D%5Cright%29%2C%0A%5Cend%7Balign%7D "\begin{align}
-\sigma^2_{z(\mathbf{s}_{0i}) | \mathbf{z}} &= \mathbf{C}^\top_{\mathbf{s}_{0i},\mathcal{N}(\mathbf{s})(\mathbf{s}_{0i})} \mathbf{C}_{\mathcal{N}(\mathbf{s})(\mathbf{s}_{0i})\\
-\sigma^2_{z(\mathbf{s}_{0i}) | \mathbf{z}} &= \mathcal{N}(\mathbf{s})(\mathbf{s}_{0i})}^{-1} \mathbf{z}_{\mathcal{N}(\mathbf{s})(\mathbf{s}_{0i})}, C_{\mathbf{s}_{0i}\,\mathbf{s}_{0i}} - \mathbf{C}^\top_{\mathbf{s}_{0i},\mathcal{N}(\mathbf{s})(\mathbf{s}_{0i})} \mathbf{C}_{\mathcal{N}(\mathbf{s})(\mathbf{s}_{0i}),\mathcal{N}(\mathbf{s})({\mathbf{s}_{0i}})}^{-1} \mathbf{C}_{\mathbf{s}_{0i},\mathcal{N}(\mathbf{s})(\mathbf{s}_{0i})}\right),
+\sigma^2\_{z(\mathbf{s}\_{0i}) \| \mathbf{z}} = \mathbf{C}^\top\_{\mathbf{s}\_{0i},\mathcal{N}(\mathbf{s})(\mathbf{s}\_{0i})} \mathbf{C}\_{\mathcal{N}(\mathbf{s})(\mathbf{s}\_{0i})}
+\end{align}](https://latex.codecogs.com/svg.image?%5Cbegin%7Balign%7D%0A%5Csigma%5E2_%7Bz%28%5Cmathbf%7Bs%7D_%7B0i%7D%29%20%7C%20%5Cmathbf%7Bz%7D%7D%20%3D%20%5Cmathbf%7BC%7D%5E%5Ctop_%7B%5Cmathbf%7Bs%7D_%7B0i%7D%2C%5Cmathcal%7BN%7D%28%5Cmathbf%7Bs%7D%29%28%5Cmathbf%7Bs%7D_%7B0i%7D%29%7D%20%5Cmathbf%7BC%7D_%7B%5Cmathcal%7BN%7D%28%5Cmathbf%7Bs%7D%29%28%5Cmathbf%7Bs%7D_%7B0i%7D%29%7D%0A%5Cend%7Balign%7D "\begin{align}
+\sigma^2_{z(\mathbf{s}_{0i}) | \mathbf{z}} = \mathbf{C}^\top_{\mathbf{s}_{0i},\mathcal{N}(\mathbf{s})(\mathbf{s}_{0i})} \mathbf{C}_{\mathcal{N}(\mathbf{s})(\mathbf{s}_{0i})}
+\end{align}")
+
+![\begin{align}
+\sigma^2\_{z(\mathbf{s}\_{0i}) \| \mathbf{z}} = \mathcal{N}(\mathbf{s})(\mathbf{s}\_{0i})}^{-1} \mathbf{z}\_{\mathcal{N}(\mathbf{s})(\mathbf{s}\_{0i})}, C\_{\mathbf{s}\_{0i}\\\mathbf{s}\_{0i}} - \mathbf{C}^\top\_{\mathbf{s}\_{0i},\mathcal{N}(\mathbf{s})(\mathbf{s}\_{0i})} \mathbf{C}\_{\mathcal{N}(\mathbf{s})(\mathbf{s}\_{0i}),\mathcal{N}(\mathbf{s})({\mathbf{s}\_{0i}})}^{-1} \mathbf{C}\_{\mathbf{s}\_{0i},\mathcal{N}(\mathbf{s})(\mathbf{s}\_{0i})}\right),
+\end{align}](https://latex.codecogs.com/svg.image?%5Cbegin%7Balign%7D%0A%5Csigma%5E2_%7Bz%28%5Cmathbf%7Bs%7D_%7B0i%7D%29%20%7C%20%5Cmathbf%7Bz%7D%7D%20%3D%20%5Cmathcal%7BN%7D%28%5Cmathbf%7Bs%7D%29%28%5Cmathbf%7Bs%7D_%7B0i%7D%29%7D%5E%7B-1%7D%20%5Cmathbf%7Bz%7D_%7B%5Cmathcal%7BN%7D%28%5Cmathbf%7Bs%7D%29%28%5Cmathbf%7Bs%7D_%7B0i%7D%29%7D%2C%20C_%7B%5Cmathbf%7Bs%7D_%7B0i%7D%5C%2C%5Cmathbf%7Bs%7D_%7B0i%7D%7D%20-%20%5Cmathbf%7BC%7D%5E%5Ctop_%7B%5Cmathbf%7Bs%7D_%7B0i%7D%2C%5Cmathcal%7BN%7D%28%5Cmathbf%7Bs%7D%29%28%5Cmathbf%7Bs%7D_%7B0i%7D%29%7D%20%5Cmathbf%7BC%7D_%7B%5Cmathcal%7BN%7D%28%5Cmathbf%7Bs%7D%29%28%5Cmathbf%7Bs%7D_%7B0i%7D%29%2C%5Cmathcal%7BN%7D%28%5Cmathbf%7Bs%7D%29%28%7B%5Cmathbf%7Bs%7D_%7B0i%7D%7D%29%7D%5E%7B-1%7D%20%5Cmathbf%7BC%7D_%7B%5Cmathbf%7Bs%7D_%7B0i%7D%2C%5Cmathcal%7BN%7D%28%5Cmathbf%7Bs%7D%29%28%5Cmathbf%7Bs%7D_%7B0i%7D%29%7D%5Cright%29%2C%0A%5Cend%7Balign%7D "\begin{align}
+\sigma^2_{z(\mathbf{s}_{0i}) | \mathbf{z}} = \mathcal{N}(\mathbf{s})(\mathbf{s}_{0i})}^{-1} \mathbf{z}_{\mathcal{N}(\mathbf{s})(\mathbf{s}_{0i})}, C_{\mathbf{s}_{0i}\,\mathbf{s}_{0i}} - \mathbf{C}^\top_{\mathbf{s}_{0i},\mathcal{N}(\mathbf{s})(\mathbf{s}_{0i})} \mathbf{C}_{\mathcal{N}(\mathbf{s})(\mathbf{s}_{0i}),\mathcal{N}(\mathbf{s})({\mathbf{s}_{0i}})}^{-1} \mathbf{C}_{\mathbf{s}_{0i},\mathcal{N}(\mathbf{s})(\mathbf{s}_{0i})}\right),
 \end{align}")
 
 where the
@@ -528,13 +533,13 @@ at
 ![\mathbf{s}\_0](https://latex.codecogs.com/svg.image?%5Cmathbf%7Bs%7D_0 "\mathbf{s}_0")
 is given by
 
-![\begin{multline}
+![\begin{align}
 \pi(y(\mathbf{s}\_0) \mid \mathbf{y}) = \int \mathcal{N}\left(y(\mathbf{s}\_0) \mid \mu\_{y(\mathbf{s}\_0) \mid \mathbf{y}}, \tau^2 \right) \\ \pi(z_1(\mathbf{s}\_0) \mid \mathbf{z}\_1, \sigma_1, \ell_1) \\ \pi(z_2(\mathbf{s}\_0) \mid \mathbf{z}\_2, \sigma_2, \ell_2) \\
 \pi(\boldsymbol{\Theta}, \mathbf{z}\_1, \mathbf{z}\_2 \mid \mathbf{y}) \\ dz_1(\mathbf{s}\_0)\\ dz_2(\mathbf{s}\_0)\\ d\mathbf{z}\_1 \\ d\mathbf{z}\_2 \\ d\boldsymbol{\Theta},
-\end{multline}](https://latex.codecogs.com/svg.image?%5Cbegin%7Bmultline%7D%0A%5Cpi%28y%28%5Cmathbf%7Bs%7D_0%29%20%5Cmid%20%5Cmathbf%7By%7D%29%20%3D%20%5Cint%20%5Cmathcal%7BN%7D%5Cleft%28y%28%5Cmathbf%7Bs%7D_0%29%20%5Cmid%20%5Cmu_%7By%28%5Cmathbf%7Bs%7D_0%29%20%5Cmid%20%5Cmathbf%7By%7D%7D%2C%20%5Ctau%5E2%20%5Cright%29%20%5C%3B%20%5Cpi%28z_1%28%5Cmathbf%7Bs%7D_0%29%20%5Cmid%20%5Cmathbf%7Bz%7D_1%2C%20%5Csigma_1%2C%20%5Cell_1%29%20%5C%3B%20%5Cpi%28z_2%28%5Cmathbf%7Bs%7D_0%29%20%5Cmid%20%5Cmathbf%7Bz%7D_2%2C%20%5Csigma_2%2C%20%5Cell_2%29%20%5C%5C%0A%5Cpi%28%5Cboldsymbol%7B%5CTheta%7D%2C%20%5Cmathbf%7Bz%7D_1%2C%20%5Cmathbf%7Bz%7D_2%20%5Cmid%20%5Cmathbf%7By%7D%29%20%5C%3B%20dz_1%28%5Cmathbf%7Bs%7D_0%29%5C%3B%20dz_2%28%5Cmathbf%7Bs%7D_0%29%5C%3B%20d%5Cmathbf%7Bz%7D_1%20%5C%3B%20d%5Cmathbf%7Bz%7D_2%20%5C%3B%20d%5Cboldsymbol%7B%5CTheta%7D%2C%0A%5Cend%7Bmultline%7D "\begin{multline}
+\end{align}](https://latex.codecogs.com/svg.image?%5Cbegin%7Balign%7D%0A%5Cpi%28y%28%5Cmathbf%7Bs%7D_0%29%20%5Cmid%20%5Cmathbf%7By%7D%29%20%3D%20%5Cint%20%5Cmathcal%7BN%7D%5Cleft%28y%28%5Cmathbf%7Bs%7D_0%29%20%5Cmid%20%5Cmu_%7By%28%5Cmathbf%7Bs%7D_0%29%20%5Cmid%20%5Cmathbf%7By%7D%7D%2C%20%5Ctau%5E2%20%5Cright%29%20%5C%3B%20%5Cpi%28z_1%28%5Cmathbf%7Bs%7D_0%29%20%5Cmid%20%5Cmathbf%7Bz%7D_1%2C%20%5Csigma_1%2C%20%5Cell_1%29%20%5C%3B%20%5Cpi%28z_2%28%5Cmathbf%7Bs%7D_0%29%20%5Cmid%20%5Cmathbf%7Bz%7D_2%2C%20%5Csigma_2%2C%20%5Cell_2%29%20%5C%5C%0A%5Cpi%28%5Cboldsymbol%7B%5CTheta%7D%2C%20%5Cmathbf%7Bz%7D_1%2C%20%5Cmathbf%7Bz%7D_2%20%5Cmid%20%5Cmathbf%7By%7D%29%20%5C%3B%20dz_1%28%5Cmathbf%7Bs%7D_0%29%5C%3B%20dz_2%28%5Cmathbf%7Bs%7D_0%29%5C%3B%20d%5Cmathbf%7Bz%7D_1%20%5C%3B%20d%5Cmathbf%7Bz%7D_2%20%5C%3B%20d%5Cboldsymbol%7B%5CTheta%7D%2C%0A%5Cend%7Balign%7D "\begin{align}
 \pi(y(\mathbf{s}_0) \mid \mathbf{y}) = \int \mathcal{N}\left(y(\mathbf{s}_0) \mid \mu_{y(\mathbf{s}_0) \mid \mathbf{y}}, \tau^2 \right) \; \pi(z_1(\mathbf{s}_0) \mid \mathbf{z}_1, \sigma_1, \ell_1) \; \pi(z_2(\mathbf{s}_0) \mid \mathbf{z}_2, \sigma_2, \ell_2) \\
 \pi(\boldsymbol{\Theta}, \mathbf{z}_1, \mathbf{z}_2 \mid \mathbf{y}) \; dz_1(\mathbf{s}_0)\; dz_2(\mathbf{s}_0)\; d\mathbf{z}_1 \; d\mathbf{z}_2 \; d\boldsymbol{\Theta},
-\end{multline}")
+\end{align}")
 
 where
 ![\mu\_{y(\mathbf{s}\_0)\mid\mathbf{y}} = \mathbf{x}'(\mathbf{s}\_0)\boldsymbol{\theta} + \gamma \exp\\z_1(\mathbf{s}\_0)\\ + z_2(\mathbf{s}\_0)](https://latex.codecogs.com/svg.image?%5Cmu_%7By%28%5Cmathbf%7Bs%7D_0%29%5Cmid%5Cmathbf%7By%7D%7D%20%3D%20%5Cmathbf%7Bx%7D%27%28%5Cmathbf%7Bs%7D_0%29%5Cboldsymbol%7B%5Ctheta%7D%20%2B%20%5Cgamma%20%5Cexp%5C%7Bz_1%28%5Cmathbf%7Bs%7D_0%29%5C%7D%20%2B%20z_2%28%5Cmathbf%7Bs%7D_0%29 "\mu_{y(\mathbf{s}_0)\mid\mathbf{y}} = \mathbf{x}'(\mathbf{s}_0)\boldsymbol{\theta} + \gamma \exp\{z_1(\mathbf{s}_0)\} + z_2(\mathbf{s}_0)")
@@ -709,9 +714,9 @@ describe the procedure under each approximating method.
       vector[n] y;
       matrix[n,p] X;
       
-      vector<lower=0>[p] theta_multiplier;
-      real<lower = 0> tau_multiplier;
-      real<lower = 0> sigma_multiplier;
+      vector<lower=0>[p] scale_theta;
+      real<lower = 0> scale_tau;
+      real<lower = 0> scale_sigma;
       
       real<lower = 0> a; // Shape parameters in the prior for ell
       real<lower = 0> b; // Scale parameters in the prior for ell
@@ -734,9 +739,9 @@ describe the procedure under each approximating method.
     }
 
     transformed parameters{
-      vector[p] theta = theta_multiplier .* theta_std;
-      real tau = tau_multiplier * tau_std;
-      real sigma = sigma_multiplier * sigma_std;
+      vector[p] theta = scale_theta .* theta_std;
+      real tau = scale_tau * tau_std;
+      real sigma = scale_sigma * sigma_std;
     }
 
 
