@@ -1,5 +1,7 @@
-Analysis of Large Geostatistical Data Using NNGP in Stan
-================
+
+# 1 Gaussian Processes and Geostatistical Data
+
+## 1.1 Gaussian Processes
 
 A Gaussian process is a random function
 ![\\z(\mathbf{s}): \mathbf{s} \in \mathcal{D}\\](https://latex.codecogs.com/svg.image?%5C%7Bz%28%5Cmathbf%7Bs%7D%29%3A%20%5Cmathbf%7Bs%7D%20%5Cin%20%5Cmathcal%7BD%7D%5C%7D "\{z(\mathbf{s}): \mathbf{s} \in \mathcal{D}\}")
@@ -7,7 +9,7 @@ defined over a
 ![d](https://latex.codecogs.com/svg.image?d "d")–dimensional surface
 (domain)
 ![\mathcal{D} \subset \mathbb{R}^d](https://latex.codecogs.com/svg.image?%5Cmathcal%7BD%7D%20%5Csubset%20%5Cmathbb%7BR%7D%5Ed "\mathcal{D} \subset \mathbb{R}^d"),
-any finite number of which have a joint Gaussian distribution.
+any finite number of which have a multivariate normal distribution.
 Therefore, a Gaussian process can be completely specified by a mean
 function
 ![\mu(\mathbf{s}) = \mathbb{E}\left\[z(\mathbf{s})\right\]](https://latex.codecogs.com/svg.image?%5Cmu%28%5Cmathbf%7Bs%7D%29%20%3D%20%5Cmathbb%7BE%7D%5Cleft%5Bz%28%5Cmathbf%7Bs%7D%29%5Cright%5D "\mu(\mathbf{s}) = \mathbb{E}\left[z(\mathbf{s})\right]")
@@ -30,16 +32,20 @@ and
 in
 ![\mathcal{D}](https://latex.codecogs.com/svg.image?%5Cmathcal%7BD%7D "\mathcal{D}").
 The resulting Gaussian process is stationary and isotropic , and is also
-called homogeneous Gaussian process . This thesis concentrates on the
-similar decomposition of covariance functions, which might be
-heterogeneous within the decomposition. See for an overview of different
-flexible heterogeneous covariance functions.
+called homogeneous Gaussian process .
 
-Different valid covariance functions used in the literature are defined
-as a function of the Euclidean distance between locations and a set of
-parameters. Refer to and for various examples; however, a famous example
-is the Mat'ern family of isotropic covariance functions, which is given
-by where
+A common example of a valid covariance function is the Mat'ern family of
+isotropic covariance functions, which is given by
+
+![\begin{align}
+\label{Chap2:Maternfunction}
+\rho(r, \nu, \ell) = \dfrac{2^{1-\nu}}{\Gamma (\nu)}\left( \sqrt{2\nu}\\ \dfrac{r}{\ell} \right)^{\nu} \\ K\_{\nu} \left(\sqrt{2\nu} \\ \dfrac{r}{\ell}\right),
+\end{align}](https://latex.codecogs.com/svg.image?%5Cbegin%7Balign%7D%0A%5Clabel%7BChap2%3AMaternfunction%7D%0A%5Crho%28r%2C%20%5Cnu%2C%20%5Cell%29%20%3D%20%5Cdfrac%7B2%5E%7B1-%5Cnu%7D%7D%7B%5CGamma%20%28%5Cnu%29%7D%5Cleft%28%20%5Csqrt%7B2%5Cnu%7D%5C%2C%20%5Cdfrac%7Br%7D%7B%5Cell%7D%20%5Cright%29%5E%7B%5Cnu%7D%20%5C%2C%20K_%7B%5Cnu%7D%20%5Cleft%28%5Csqrt%7B2%5Cnu%7D%20%5C%2C%20%5Cdfrac%7Br%7D%7B%5Cell%7D%5Cright%29%2C%0A%5Cend%7Balign%7D "\begin{align}
+\label{Chap2:Maternfunction}
+\rho(r, \nu, \ell) = \dfrac{2^{1-\nu}}{\Gamma (\nu)}\left( \sqrt{2\nu}\, \dfrac{r}{\ell} \right)^{\nu} \, K_{\nu} \left(\sqrt{2\nu} \, \dfrac{r}{\ell}\right),
+\end{align}")
+
+where
 ![r = \|\|\mathbf{s}-\mathbf{s}^\prime\|\|](https://latex.codecogs.com/svg.image?r%20%3D%20%7C%7C%5Cmathbf%7Bs%7D-%5Cmathbf%7Bs%7D%5E%5Cprime%7C%7C "r = ||\mathbf{s}-\mathbf{s}^\prime||")
 is the distance between any two locations
 ![\mathbf{s}](https://latex.codecogs.com/svg.image?%5Cmathbf%7Bs%7D "\mathbf{s}")
@@ -94,7 +100,13 @@ ensuring accurate representation of spatial processes. For instance,
 with
 ![\nu = 3/2](https://latex.codecogs.com/svg.image?%5Cnu%20%3D%203%2F2 "\nu = 3/2"),
 the Mat'ern 3/2 correlation function is
-![C\_{3/2}(r, \ell) = (1 + \sqrt{3}\\ r/\ell) \exp\left(-\sqrt{3}\\r/\ell\right)](https://latex.codecogs.com/svg.image?C_%7B3%2F2%7D%28r%2C%20%5Cell%29%20%3D%20%281%20%2B%20%5Csqrt%7B3%7D%5C%2C%20r%2F%5Cell%29%20%5Cexp%5Cleft%28-%5Csqrt%7B3%7D%5C%2Cr%2F%5Cell%5Cright%29 "C_{3/2}(r, \ell) = (1 + \sqrt{3}\, r/\ell) \exp\left(-\sqrt{3}\,r/\ell\right)"),
+
+![\begin{align}
+C\_{3/2}(r, \ell) = (1 + \sqrt{3}\\ r/\ell) \exp\left(-\sqrt{3}\\r/\ell\right),
+\end{align}](https://latex.codecogs.com/svg.image?%5Cbegin%7Balign%7D%0AC_%7B3%2F2%7D%28r%2C%20%5Cell%29%20%3D%20%281%20%2B%20%5Csqrt%7B3%7D%5C%2C%20r%2F%5Cell%29%20%5Cexp%5Cleft%28-%5Csqrt%7B3%7D%5C%2Cr%2F%5Cell%5Cright%29%2C%0A%5Cend%7Balign%7D "\begin{align}
+C_{3/2}(r, \ell) = (1 + \sqrt{3}\, r/\ell) \exp\left(-\sqrt{3}\,r/\ell\right),
+\end{align}")
+
 indicating how spatial correlation decreases with distance. For
 distances
 ![\ell/2](https://latex.codecogs.com/svg.image?%5Cell%2F2 "\ell/2"),
@@ -112,7 +124,15 @@ the joint distribution of an
 possible realizations
 ![\mathbf{z}^\prime = (z(\mathbf{s}\_1),\ldots,z(\mathbf{s}\_n))](https://latex.codecogs.com/svg.image?%5Cmathbf%7Bz%7D%5E%5Cprime%20%3D%20%28z%28%5Cmathbf%7Bs%7D_1%29%2C%5Cldots%2Cz%28%5Cmathbf%7Bs%7D_n%29%29 "\mathbf{z}^\prime = (z(\mathbf{s}_1),\ldots,z(\mathbf{s}_n))")
 from a Gaussian process follows a multivariate normal distribution, that
-is, where
+is,
+
+![\begin{align}
+f(\mathbf{z} \mid \boldsymbol{\theta}) \propto \dfrac{1}{\sqrt{\|\sigma^2\mathbf{B}\|}} \exp\left\\-\dfrac{1}{2\sigma^2} (\mathbf{z} - \boldsymbol{\mu})^\prime \mathbf{B}^{-1}(\mathbf{z} - \boldsymbol{\mu})\right\\,
+\end{align}](https://latex.codecogs.com/svg.image?%5Cbegin%7Balign%7D%0Af%28%5Cmathbf%7Bz%7D%20%5Cmid%20%5Cboldsymbol%7B%5Ctheta%7D%29%20%5Cpropto%20%5Cdfrac%7B1%7D%7B%5Csqrt%7B%7C%5Csigma%5E2%5Cmathbf%7BB%7D%7C%7D%7D%20%5Cexp%5Cleft%5C%7B-%5Cdfrac%7B1%7D%7B2%5Csigma%5E2%7D%20%28%5Cmathbf%7Bz%7D%20-%20%5Cboldsymbol%7B%5Cmu%7D%29%5E%5Cprime%20%5Cmathbf%7BB%7D%5E%7B-1%7D%28%5Cmathbf%7Bz%7D%20-%20%5Cboldsymbol%7B%5Cmu%7D%29%5Cright%5C%7D%2C%0A%5Cend%7Balign%7D "\begin{align}
+f(\mathbf{z} \mid \boldsymbol{\theta}) \propto \dfrac{1}{\sqrt{|\sigma^2\mathbf{B}|}} \exp\left\{-\dfrac{1}{2\sigma^2} (\mathbf{z} - \boldsymbol{\mu})^\prime \mathbf{B}^{-1}(\mathbf{z} - \boldsymbol{\mu})\right\},
+\end{align}")
+
+where
 ![\boldsymbol{\mu}^\prime = (\mu(\mathbf{s}\_1),\ldots,\mu(\mathbf{s}\_n))](https://latex.codecogs.com/svg.image?%5Cboldsymbol%7B%5Cmu%7D%5E%5Cprime%20%3D%20%28%5Cmu%28%5Cmathbf%7Bs%7D_1%29%2C%5Cldots%2C%5Cmu%28%5Cmathbf%7Bs%7D_n%29%29 "\boldsymbol{\mu}^\prime = (\mu(\mathbf{s}_1),\ldots,\mu(\mathbf{s}_n))")
 is a ![n](https://latex.codecogs.com/svg.image?n "n")–dimensional vector
 of means, and
@@ -123,13 +143,15 @@ correlation matrix with
 element is
 ![\rho(\mathbf{s}\_i,\mathbf{s}\_j)](https://latex.codecogs.com/svg.image?%5Crho%28%5Cmathbf%7Bs%7D_i%2C%5Cmathbf%7Bs%7D_j%29 "\rho(\mathbf{s}_i,\mathbf{s}_j)").
 
-Spatial data refers to information explicitly linked with locations
-across any surface or geographical area. This thesis delves into a
-specific data type where each observation or data point is associated
-with a precise location defined by coordinates, known as point reference
-spatial data or geostatistical data. The coordinates typically include
-latitude and longitude for global positioning, easting and northing for
-local projections, or
+## 1.2 Geostatistical Data
+
+Geostatistical data refers to information explicitly linked with
+locations across any surface or geographical area. This thesis delves
+into a specific data type where each observation or data point is
+associated with a precise location defined by coordinates, known as
+point reference spatial data or geostatistical data. The coordinates
+typically include latitude and longitude for global positioning, easting
+and northing for local projections, or
 ![(x,y)](https://latex.codecogs.com/svg.image?%28x%2Cy%29 "(x,y)")–coordinates
 of a surface. Analyzing point reference data aims to capture variability
 and correlation in observed phenomena and predict values at unobserved
@@ -159,7 +181,7 @@ application in modeling spatial processes. We will then review the
 literature on non-Gaussian spatial and spatio-temporal modeling.
 Finally, we will outline the objectives of this thesis.
 
-## 0.1 Modeling Geostatistical Data
+## 1.3 Modeling Geostatistical Data
 
 Analysis of spatial data observed over a finite set of locations over a
 fixed domain often assumes that the measurement variable is,
@@ -224,7 +246,7 @@ normal distribution with mean zero and variance
 In practice, a single partial realization of a spatial Gaussian process
 is available to infer the parameters and prediction.
 
-### 0.1.1 Inference Procedure
+### 1.3.1 Inference Procedure
 
 Let
 ![\mathbf{y} = (y(\mathbf{s}\_1),\ldots, y(\mathbf{s}\_n))^\prime](https://latex.codecogs.com/svg.image?%5Cmathbf%7By%7D%20%3D%20%28y%28%5Cmathbf%7Bs%7D_1%29%2C%5Cldots%2C%20y%28%5Cmathbf%7Bs%7D_n%29%29%5E%5Cprime "\mathbf{y} = (y(\mathbf{s}_1),\ldots, y(\mathbf{s}_n))^\prime")
@@ -287,7 +309,7 @@ from the posterior distribution, which can be used to estimate various
 summary statistics. Once samples from the posterior distribution are
 available, predictions to unobserved locations follow straightforwardly.
 
-## 0.2 Latent GP in Stan
+## 1.4 Latent GP in Stan
 
     data {
       int<lower=0> n;
@@ -344,9 +366,9 @@ available, predictions to unobserved locations follow straightforwardly.
       
     }
 
-### 0.2.1 Marginalization of Latent Process
+### 1.4.1 Marginalization of Latent Process
 
-### 0.2.2 Spatial Interpolation
+### 1.4.2 Spatial Interpolation
 
 To predict the responses
 ![\mathbf{y}^{\star} = (y(\mathbf{s}\_1^\star),\ldots,y(\mathbf{s}\_{n^\star}^\star))^\prime](https://latex.codecogs.com/svg.image?%5Cmathbf%7By%7D%5E%7B%5Cstar%7D%20%3D%20%28y%28%5Cmathbf%7Bs%7D_1%5E%5Cstar%29%2C%5Cldots%2Cy%28%5Cmathbf%7Bs%7D_%7Bn%5E%5Cstar%7D%5E%5Cstar%29%29%5E%5Cprime "\mathbf{y}^{\star} = (y(\mathbf{s}_1^\star),\ldots,y(\mathbf{s}_{n^\star}^\star))^\prime")
@@ -422,7 +444,7 @@ the parameters are obtained, estimates for
 ![\mathbf{z}](https://latex.codecogs.com/svg.image?%5Cmathbf%7Bz%7D "\mathbf{z}")
 can be recovered through composition sampling techniques.
 
-### 0.2.3 Recovery of the Latent Component
+### 1.4.3 Recovery of the Latent Component
 
 One might be interested in the posterior distribution of the latent
 spatial component
@@ -508,7 +530,7 @@ multivariate normal with mean
 and variance
 ![\text{Var}\[\mathbf{z}^\star \mid \mathbf{z}\] = \sigma^2 (\mathbf{B}^\star - \mathbf{B}^{\text{pred-to-obs}} \mathbf{B}^{-1} \mathbf{B}^{\text{obs-to-pred}})](https://latex.codecogs.com/svg.image?%5Ctext%7BVar%7D%5B%5Cmathbf%7Bz%7D%5E%5Cstar%20%5Cmid%20%5Cmathbf%7Bz%7D%5D%20%3D%20%5Csigma%5E2%20%28%5Cmathbf%7BB%7D%5E%5Cstar%20-%20%5Cmathbf%7BB%7D%5E%7B%5Ctext%7Bpred-to-obs%7D%7D%20%5Cmathbf%7BB%7D%5E%7B-1%7D%20%5Cmathbf%7BB%7D%5E%7B%5Ctext%7Bobs-to-pred%7D%7D%29 "\text{Var}[\mathbf{z}^\star \mid \mathbf{z}] = \sigma^2 (\mathbf{B}^\star - \mathbf{B}^{\text{pred-to-obs}} \mathbf{B}^{-1} \mathbf{B}^{\text{obs-to-pred}})").
 
-## 0.3 Response GP in Stan
+## 1.5 Response GP in Stan
 
     data {
       int<lower=0> n;
@@ -554,9 +576,9 @@ and variance
       y ~ multi_normal_cholesky(mu, L);
     }
 
-### 0.3.1 Computational complexity in analysing large datasets
+### 1.5.1 Computational complexity in analysing large datasets
 
-## 0.4 Vecchia’s approximation and NNGP
+## 1.6 Vecchia’s approximation and NNGP
 
 Datta et al. ([2016](#ref-datta2016hierarchical)) developed the NNGP as
 a sparse approximation of to a full GP. It generalizes the idea of
@@ -931,7 +953,7 @@ at prediction location
 depend on how the latent processes are approximated. In what follows, we
 describe the procedure under each approximating method.
 
-## 0.5 Response NNGP in Stan
+## 1.7 Response NNGP in Stan
 
     functions {
 
@@ -1036,7 +1058,7 @@ describe the procedure under each approximating method.
       
     }
 
-## 0.6 References
+## 1.8 References
 
 <div id="refs" class="references csl-bib-body hanging-indent"
 entry-spacing="0">
