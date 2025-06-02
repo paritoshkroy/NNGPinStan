@@ -1,7 +1,7 @@
 
-# 1 Gaussian Processes and Geostatistical Data
+# Gaussian processes and point-referenced spatial data
 
-## 1.1 Gaussian Processes
+## Gaussian processes
 
 A Gaussian process is a random function
 ![\\z(\mathbf{s}): \mathbf{s} \in \mathcal{D}\\](https://latex.codecogs.com/svg.image?%5C%7Bz%28%5Cmathbf%7Bs%7D%29%3A%20%5Cmathbf%7Bs%7D%20%5Cin%20%5Cmathcal%7BD%7D%5C%7D "\{z(\mathbf{s}): \mathbf{s} \in \mathcal{D}\}")
@@ -102,12 +102,12 @@ with
 the Mat'ern 3/2 correlation function is
 
 ![\begin{align}
-C\_{3/2}(r, \ell) = (1 + \sqrt{3}\\ r/\ell) \exp\left(-\sqrt{3}\\r/\ell\right),
-\end{align}](https://latex.codecogs.com/svg.image?%5Cbegin%7Balign%7D%0AC_%7B3%2F2%7D%28r%2C%20%5Cell%29%20%3D%20%281%20%2B%20%5Csqrt%7B3%7D%5C%2C%20r%2F%5Cell%29%20%5Cexp%5Cleft%28-%5Csqrt%7B3%7D%5C%2Cr%2F%5Cell%5Cright%29%2C%0A%5Cend%7Balign%7D "\begin{align}
-C_{3/2}(r, \ell) = (1 + \sqrt{3}\, r/\ell) \exp\left(-\sqrt{3}\,r/\ell\right),
+C\_{3/2}(r, \ell) = (1 + \dfrac{\sqrt{3}\\ r}{\ell}) \exp\left(-\dfrac{\sqrt{3}\\r}{\ell}\right),
+\end{align}](https://latex.codecogs.com/svg.image?%5Cbegin%7Balign%7D%0AC_%7B3%2F2%7D%28r%2C%20%5Cell%29%20%3D%20%281%20%2B%20%5Cdfrac%7B%5Csqrt%7B3%7D%5C%2C%20r%7D%7B%5Cell%7D%29%20%5Cexp%5Cleft%28-%5Cdfrac%7B%5Csqrt%7B3%7D%5C%2Cr%7D%7B%5Cell%7D%5Cright%29%2C%0A%5Cend%7Balign%7D "\begin{align}
+C_{3/2}(r, \ell) = (1 + \dfrac{\sqrt{3}\, r}{\ell}) \exp\left(-\dfrac{\sqrt{3}\,r}{\ell}\right),
 \end{align}")
 
-indicating how spatial correlation decreases with distance. For
+indicating how spatial correlation decreases with distance, and for
 distances
 ![\ell/2](https://latex.codecogs.com/svg.image?%5Cell%2F2 "\ell/2"),
 ![\ell](https://latex.codecogs.com/svg.image?%5Cell "\ell"),
@@ -139,59 +139,44 @@ of means, and
 ![\mathbf{B}](https://latex.codecogs.com/svg.image?%5Cmathbf%7BB%7D "\mathbf{B}")
 is a ![n](https://latex.codecogs.com/svg.image?n "n")–dimensional
 correlation matrix with
-![{i,j}](https://latex.codecogs.com/svg.image?%7Bi%2Cj%7D "{i,j}")th
+![(i,j)](https://latex.codecogs.com/svg.image?%28i%2Cj%29 "(i,j)")th
 element is
 ![\rho(\mathbf{s}\_i,\mathbf{s}\_j)](https://latex.codecogs.com/svg.image?%5Crho%28%5Cmathbf%7Bs%7D_i%2C%5Cmathbf%7Bs%7D_j%29 "\rho(\mathbf{s}_i,\mathbf{s}_j)").
 
-## 1.2 Geostatistical Data
+## Point-referenced spatial data
 
-Geostatistical data refers to information explicitly linked with
-locations across any surface or geographical area. This thesis delves
-into a specific data type where each observation or data point is
-associated with a precise location defined by coordinates, known as
-point reference spatial data or geostatistical data. The coordinates
-typically include latitude and longitude for global positioning, easting
-and northing for local projections, or
+Point-referenced spatial data refers to observations where each data
+point is associated with a precise location defined by coordinates. The
+coordinates typically include latitude and longitude for global
+positioning, easting and northing for local projections, or
 ![(x,y)](https://latex.codecogs.com/svg.image?%28x%2Cy%29 "(x,y)")–coordinates
 of a surface. Analyzing point reference data aims to capture variability
-and correlation in observed phenomena and predict values at unobserved
-locations while assessing uncertainty. Its applications are widespread
-in environmental monitoring and geophysical studies. For example,
-weather stations record temperature, humidity, and air quality at some
-fixed monitoring sites across a geographical area, and data analysis
-often aims to obtain a predicted surface of the phenomena by estimating
-values at unobserved locations. Spatial data provide valuable insights
-into the geographical distribution of phenomena. However, spatial data
-analysis presents significant challenges, underscoring the critical need
-for a deep understanding of statistical methods and computational tools.
-Proficiency in navigating these intricacies is vital to unlocking the
-full potential of these data types.
+and correlation in observed phenomena, predict values at unobserved
+locations, and assess uncertainty. Its applications are widespread in
+environmental monitoring and geophysical studies. For example, weather
+stations record temperature, humidity, and air quality at some fixed
+monitoring sites across a geographical area, and data analysis often
+aims to obtain a predicted surface of the phenomena by estimating values
+at unobserved locations.
 
-Statistical modeling of point reference data necessitates specifying a
-random surface . One method to achieve this is through basis function
-representations, including splines, wavelets, and radial basis
-functions. An alternative, widely adopted approach involves modeling the
-surface as a realization of a stochastic process. Gaussian processes
-provide a practical framework for such modeling, offering a versatile
-tool for spatial processes. They facilitate straightforward inference
-and prediction by capturing spatial correlations, interpolating data,
-modeling variability, and enabling probabilistic inference. Therefore,
-in the following, we will outline Gaussian processes and explore their
-application in modeling spatial processes. We will then review the
-literature on non-Gaussian spatial and spatio-temporal modeling.
-Finally, we will outline the objectives of this thesis.
+Statistical modeling of point reference data often assumes that the
+measurement variable is, theoretically, defined at locations that vary
+continuously across the domain. Thus, it necessitates specifying a
+random surface . A widely adopted approach involves modeling the surface
+as a realization of a stochastic process. Gaussian processes provide a
+practical framework for such modeling, offering a versatile tool for
+representing the spatial processes that vary continuously across space.
+The Gaussian processes facilitate straightforward inference and
+prediction by capturing spatial correlations, interpolating data,
+modeling variability, and enabling probabilistic inference. In the
+following, we will explore the application of Gaussian processes in
+analyzing point-referenced spatial data.
 
-## 1.3 Modeling Geostatistical Data
+## Point-referenced spatial data model
 
-Analysis of spatial data observed over a finite set of locations over a
-fixed domain often assumes that the measurement variable is,
-theoretically, defined at locations varying continuously across the
-domain. Consequently, a Gaussian process is thus a valuable tool for
-modeling spatial data. For this topic, several textbooks are available,
-including~, while illustrates how a Gaussian process is the most
-valuable tool in the analysis of spatial data. Within this framework,
-observations over a finite set of locations in a spatial domain are
-assumed to be partial realizations of a spatial Gaussian process
+Within this framework, observations over a finite set of locations in a
+spatial domain are assumed to be partial realizations of a spatial
+Gaussian process
 ![\\y(\mathbf{s}): \mathbf{s} \in \mathcal{D}\\](https://latex.codecogs.com/svg.image?%5C%7By%28%5Cmathbf%7Bs%7D%29%3A%20%5Cmathbf%7Bs%7D%20%5Cin%20%5Cmathcal%7BD%7D%5C%7D "\{y(\mathbf{s}): \mathbf{s} \in \mathcal{D}\}")
 that defined on spatial index
 ![\mathbf{s}](https://latex.codecogs.com/svg.image?%5Cmathbf%7Bs%7D "\mathbf{s}")
@@ -199,23 +184,20 @@ varying continuously throughout
 ![d](https://latex.codecogs.com/svg.image?d "d")–dimensional domain
 ![\mathcal{D} \in \mathbb{R}^{d}](https://latex.codecogs.com/svg.image?%5Cmathcal%7BD%7D%20%5Cin%20%5Cmathbb%7BR%7D%5E%7Bd%7D "\mathcal{D} \in \mathbb{R}^{d}").
 Therefore, the joint distribution of measurements at any finite set of
-locations is assumed to be multivariate normal, and modeling only
-requires specifying the mean and a valid covariance function. The
-properties of multivariate normal distribution ensure the closed-form
-marginal and conditionals, leading to straightforward computation for
+locations is assumed to be multivariate normal, and the properties of
+the multivariate normal distribution ensure closed-form marginal and
+conditional distributions, leading to straightforward computation for
 model fitting and prediction.
 
-To illustrate the above, consider that the measurement
+Assume that the measurement
 ![y(\mathbf{s})](https://latex.codecogs.com/svg.image?y%28%5Cmathbf%7Bs%7D%29 "y(\mathbf{s})"),
 at location
 ![\mathbf{s}](https://latex.codecogs.com/svg.image?%5Cmathbf%7Bs%7D "\mathbf{s}"),
-is generated as
+be a generated as
 
 ![\begin{align}
-\label{chap2:gp_marginal_model}
 y(\mathbf{s}) = \mathbf{x}(\mathbf{s})^\prime \boldsymbol{\theta} + z(\mathbf{s}) + \epsilon(\mathbf{s}),
-\end{align}](https://latex.codecogs.com/svg.image?%5Cbegin%7Balign%7D%0A%5Clabel%7Bchap2%3Agp_marginal_model%7D%0Ay%28%5Cmathbf%7Bs%7D%29%20%3D%20%5Cmathbf%7Bx%7D%28%5Cmathbf%7Bs%7D%29%5E%5Cprime%20%5Cboldsymbol%7B%5Ctheta%7D%20%2B%20z%28%5Cmathbf%7Bs%7D%29%20%2B%20%5Cepsilon%28%5Cmathbf%7Bs%7D%29%2C%0A%5Cend%7Balign%7D "\begin{align}
-\label{chap2:gp_marginal_model}
+\end{align}](https://latex.codecogs.com/svg.image?%5Cbegin%7Balign%7D%0Ay%28%5Cmathbf%7Bs%7D%29%20%3D%20%5Cmathbf%7Bx%7D%28%5Cmathbf%7Bs%7D%29%5E%5Cprime%20%5Cboldsymbol%7B%5Ctheta%7D%20%2B%20z%28%5Cmathbf%7Bs%7D%29%20%2B%20%5Cepsilon%28%5Cmathbf%7Bs%7D%29%2C%0A%5Cend%7Balign%7D "\begin{align}
 y(\mathbf{s}) = \mathbf{x}(\mathbf{s})^\prime \boldsymbol{\theta} + z(\mathbf{s}) + \epsilon(\mathbf{s}),
 \end{align}")
 
@@ -246,7 +228,7 @@ normal distribution with mean zero and variance
 In practice, a single partial realization of a spatial Gaussian process
 is available to infer the parameters and prediction.
 
-### 1.3.1 Inference Procedure
+### Inference Procedure
 
 Let
 ![\mathbf{y} = (y(\mathbf{s}\_1),\ldots, y(\mathbf{s}\_n))^\prime](https://latex.codecogs.com/svg.image?%5Cmathbf%7By%7D%20%3D%20%28y%28%5Cmathbf%7Bs%7D_1%29%2C%5Cldots%2C%20y%28%5Cmathbf%7Bs%7D_n%29%29%5E%5Cprime "\mathbf{y} = (y(\mathbf{s}_1),\ldots, y(\mathbf{s}_n))^\prime")
@@ -309,7 +291,7 @@ from the posterior distribution, which can be used to estimate various
 summary statistics. Once samples from the posterior distribution are
 available, predictions to unobserved locations follow straightforwardly.
 
-## 1.4 Latent GP in Stan
+## Latent GP in Stan
 
     data {
       int<lower=0> n;
@@ -366,9 +348,9 @@ available, predictions to unobserved locations follow straightforwardly.
       
     }
 
-### 1.4.1 Marginalization of Latent Process
+### Marginalization of Latent Process
 
-### 1.4.2 Spatial Interpolation
+### Spatial Interpolation
 
 To predict the responses
 ![\mathbf{y}^{\star} = (y(\mathbf{s}\_1^\star),\ldots,y(\mathbf{s}\_{n^\star}^\star))^\prime](https://latex.codecogs.com/svg.image?%5Cmathbf%7By%7D%5E%7B%5Cstar%7D%20%3D%20%28y%28%5Cmathbf%7Bs%7D_1%5E%5Cstar%29%2C%5Cldots%2Cy%28%5Cmathbf%7Bs%7D_%7Bn%5E%5Cstar%7D%5E%5Cstar%29%29%5E%5Cprime "\mathbf{y}^{\star} = (y(\mathbf{s}_1^\star),\ldots,y(\mathbf{s}_{n^\star}^\star))^\prime")
@@ -444,7 +426,7 @@ the parameters are obtained, estimates for
 ![\mathbf{z}](https://latex.codecogs.com/svg.image?%5Cmathbf%7Bz%7D "\mathbf{z}")
 can be recovered through composition sampling techniques.
 
-### 1.4.3 Recovery of the Latent Component
+### Recovery of the Latent Component
 
 One might be interested in the posterior distribution of the latent
 spatial component
@@ -530,7 +512,7 @@ multivariate normal with mean
 and variance
 ![\text{Var}\[\mathbf{z}^\star \mid \mathbf{z}\] = \sigma^2 (\mathbf{B}^\star - \mathbf{B}^{\text{pred-to-obs}} \mathbf{B}^{-1} \mathbf{B}^{\text{obs-to-pred}})](https://latex.codecogs.com/svg.image?%5Ctext%7BVar%7D%5B%5Cmathbf%7Bz%7D%5E%5Cstar%20%5Cmid%20%5Cmathbf%7Bz%7D%5D%20%3D%20%5Csigma%5E2%20%28%5Cmathbf%7BB%7D%5E%5Cstar%20-%20%5Cmathbf%7BB%7D%5E%7B%5Ctext%7Bpred-to-obs%7D%7D%20%5Cmathbf%7BB%7D%5E%7B-1%7D%20%5Cmathbf%7BB%7D%5E%7B%5Ctext%7Bobs-to-pred%7D%7D%29 "\text{Var}[\mathbf{z}^\star \mid \mathbf{z}] = \sigma^2 (\mathbf{B}^\star - \mathbf{B}^{\text{pred-to-obs}} \mathbf{B}^{-1} \mathbf{B}^{\text{obs-to-pred}})").
 
-## 1.5 Response GP in Stan
+## Response GP in Stan
 
     data {
       int<lower=0> n;
@@ -576,9 +558,9 @@ and variance
       y ~ multi_normal_cholesky(mu, L);
     }
 
-### 1.5.1 Computational complexity in analysing large datasets
+### Computational complexity in analysing large datasets
 
-## 1.6 Vecchia’s approximation and NNGP
+## Vecchia’s approximation and NNGP
 
 Datta et al. ([2016](#ref-datta2016hierarchical)) developed the NNGP as
 a sparse approximation of to a full GP. It generalizes the idea of
@@ -953,7 +935,7 @@ at prediction location
 depend on how the latent processes are approximated. In what follows, we
 describe the procedure under each approximating method.
 
-## 1.7 Response NNGP in Stan
+## Response NNGP in Stan
 
     functions {
 
@@ -1058,7 +1040,7 @@ describe the procedure under each approximating method.
       
     }
 
-## 1.8 References
+## References
 
 <div id="refs" class="references csl-bib-body hanging-indent"
 entry-spacing="0">
