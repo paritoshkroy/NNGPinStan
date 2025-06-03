@@ -522,9 +522,20 @@ is used to draw samples for
 The conditional distribution is
 ![n^\star](https://latex.codecogs.com/svg.image?n%5E%5Cstar "n^\star")–dimensional
 multivariate normal with mean
-![\mathbf{E}\[\mathbf{z}^\star \mid \mathbf{z}\] = \mathbf{B}^{\text{pred-to-obs}} \mathbf{B}^{-1} \mathbf{z}](https://latex.codecogs.com/svg.image?%5Cmathbf%7BE%7D%5B%5Cmathbf%7Bz%7D%5E%5Cstar%20%5Cmid%20%5Cmathbf%7Bz%7D%5D%20%3D%20%5Cmathbf%7BB%7D%5E%7B%5Ctext%7Bpred-to-obs%7D%7D%20%5Cmathbf%7BB%7D%5E%7B-1%7D%20%5Cmathbf%7Bz%7D "\mathbf{E}[\mathbf{z}^\star \mid \mathbf{z}] = \mathbf{B}^{\text{pred-to-obs}} \mathbf{B}^{-1} \mathbf{z}")
+
+![\begin{align}
+\mathbf{E}\[\mathbf{z}^\star \mid \mathbf{z}\] = \mathbf{B}^{\text{pred-to-obs}} \mathbf{B}^{-1} \mathbf{z}
+\end{align}](https://latex.codecogs.com/svg.image?%5Cbegin%7Balign%7D%0A%5Cmathbf%7BE%7D%5B%5Cmathbf%7Bz%7D%5E%5Cstar%20%5Cmid%20%5Cmathbf%7Bz%7D%5D%20%3D%20%5Cmathbf%7BB%7D%5E%7B%5Ctext%7Bpred-to-obs%7D%7D%20%5Cmathbf%7BB%7D%5E%7B-1%7D%20%5Cmathbf%7Bz%7D%0A%5Cend%7Balign%7D "\begin{align}
+\mathbf{E}[\mathbf{z}^\star \mid \mathbf{z}] = \mathbf{B}^{\text{pred-to-obs}} \mathbf{B}^{-1} \mathbf{z}
+\end{align}")
+
 and variance
-![\text{Var}\[\mathbf{z}^\star \mid \mathbf{z}\] = \sigma^2 (\mathbf{B}^\star - \mathbf{B}^{\text{pred-to-obs}} \mathbf{B}^{-1} \mathbf{B}^{\text{obs-to-pred}})](https://latex.codecogs.com/svg.image?%5Ctext%7BVar%7D%5B%5Cmathbf%7Bz%7D%5E%5Cstar%20%5Cmid%20%5Cmathbf%7Bz%7D%5D%20%3D%20%5Csigma%5E2%20%28%5Cmathbf%7BB%7D%5E%5Cstar%20-%20%5Cmathbf%7BB%7D%5E%7B%5Ctext%7Bpred-to-obs%7D%7D%20%5Cmathbf%7BB%7D%5E%7B-1%7D%20%5Cmathbf%7BB%7D%5E%7B%5Ctext%7Bobs-to-pred%7D%7D%29 "\text{Var}[\mathbf{z}^\star \mid \mathbf{z}] = \sigma^2 (\mathbf{B}^\star - \mathbf{B}^{\text{pred-to-obs}} \mathbf{B}^{-1} \mathbf{B}^{\text{obs-to-pred}})").
+
+![\begin{align}
+\text{Var}\[\mathbf{z}^\star \mid \mathbf{z}\] = \sigma^2 (\mathbf{B}^\star - \mathbf{B}^{\text{pred-to-obs}} \mathbf{B}^{-1} \mathbf{B}^{\text{obs-to-pred}}).
+\end{align}](https://latex.codecogs.com/svg.image?%5Cbegin%7Balign%7D%0A%5Ctext%7BVar%7D%5B%5Cmathbf%7Bz%7D%5E%5Cstar%20%5Cmid%20%5Cmathbf%7Bz%7D%5D%20%3D%20%5Csigma%5E2%20%28%5Cmathbf%7BB%7D%5E%5Cstar%20-%20%5Cmathbf%7BB%7D%5E%7B%5Ctext%7Bpred-to-obs%7D%7D%20%5Cmathbf%7BB%7D%5E%7B-1%7D%20%5Cmathbf%7BB%7D%5E%7B%5Ctext%7Bobs-to-pred%7D%7D%29.%0A%5Cend%7Balign%7D "\begin{align}
+\text{Var}[\mathbf{z}^\star \mid \mathbf{z}] = \sigma^2 (\mathbf{B}^\star - \mathbf{B}^{\text{pred-to-obs}} \mathbf{B}^{-1} \mathbf{B}^{\text{obs-to-pred}}).
+\end{align}")
 
 ## Hierarchical representation of the above model
 
@@ -761,27 +772,34 @@ at any unobserved location
 is given by
 
 ![\begin{align}
-\pi(y(\mathbf{s}^\star) \mid \mathbf{y}) &= \int \mathcal{N}\left(y(\mathbf{s}^\star) \mid \mu\_{y(\mathbf{s}^\star)\mid \mathbf{y}}, \sigma^2\_{y(\mathbf{s}^\star) \mid \mathbf{y}} \right)\\ \pi(\boldsymbol{\Phi}, \mid \mathbf{y}) \\ d\boldsymbol{\Phi},
-\end{align}](https://latex.codecogs.com/svg.image?%5Cbegin%7Balign%7D%0A%5Cpi%28y%28%5Cmathbf%7Bs%7D%5E%5Cstar%29%20%5Cmid%20%5Cmathbf%7By%7D%29%20%26%3D%20%5Cint%20%5Cmathcal%7BN%7D%5Cleft%28y%28%5Cmathbf%7Bs%7D%5E%5Cstar%29%20%5Cmid%20%5Cmu_%7By%28%5Cmathbf%7Bs%7D%5E%5Cstar%29%5Cmid%20%5Cmathbf%7By%7D%7D%2C%20%5Csigma%5E2_%7By%28%5Cmathbf%7Bs%7D%5E%5Cstar%29%20%5Cmid%20%5Cmathbf%7By%7D%7D%20%5Cright%29%5C%3B%20%5Cpi%28%5Cboldsymbol%7B%5CPhi%7D%2C%20%5Cmid%20%5Cmathbf%7By%7D%29%20%5C%3B%20d%5Cboldsymbol%7B%5CPhi%7D%2C%0A%5Cend%7Balign%7D "\begin{align}
-\pi(y(\mathbf{s}^\star) \mid \mathbf{y}) &= \int \mathcal{N}\left(y(\mathbf{s}^\star) \mid \mu_{y(\mathbf{s}^\star)\mid \mathbf{y}}, \sigma^2_{y(\mathbf{s}^\star) \mid \mathbf{y}} \right)\; \pi(\boldsymbol{\Phi}, \mid \mathbf{y}) \; d\boldsymbol{\Phi},
+\pi(y(\mathbf{s}^\star) \mid \mathbf{y}) &= \int \mathcal{N}\left(y(\mathbf{s}^\star) \mid \mu\_{y(\mathbf{s}^\star)\mid \mathbf{y}\_{\mathbb{N}(\mathbf{s}^\star)}}, \sigma^2\_{y(\mathbf{s}^\star) \mid \mathbf{y}\_{\mathbb{N}(\mathbf{s}^\star)}} \right)\\ \pi(\boldsymbol{\Phi}, \mid \mathbf{y}) \\ d\boldsymbol{\Phi},
+\end{align}](https://latex.codecogs.com/svg.image?%5Cbegin%7Balign%7D%0A%5Cpi%28y%28%5Cmathbf%7Bs%7D%5E%5Cstar%29%20%5Cmid%20%5Cmathbf%7By%7D%29%20%26%3D%20%5Cint%20%5Cmathcal%7BN%7D%5Cleft%28y%28%5Cmathbf%7Bs%7D%5E%5Cstar%29%20%5Cmid%20%5Cmu_%7By%28%5Cmathbf%7Bs%7D%5E%5Cstar%29%5Cmid%20%5Cmathbf%7By%7D_%7B%5Cmathbb%7BN%7D%28%5Cmathbf%7Bs%7D%5E%5Cstar%29%7D%7D%2C%20%5Csigma%5E2_%7By%28%5Cmathbf%7Bs%7D%5E%5Cstar%29%20%5Cmid%20%5Cmathbf%7By%7D_%7B%5Cmathbb%7BN%7D%28%5Cmathbf%7Bs%7D%5E%5Cstar%29%7D%7D%20%5Cright%29%5C%3B%20%5Cpi%28%5Cboldsymbol%7B%5CPhi%7D%2C%20%5Cmid%20%5Cmathbf%7By%7D%29%20%5C%3B%20d%5Cboldsymbol%7B%5CPhi%7D%2C%0A%5Cend%7Balign%7D "\begin{align}
+\pi(y(\mathbf{s}^\star) \mid \mathbf{y}) &= \int \mathcal{N}\left(y(\mathbf{s}^\star) \mid \mu_{y(\mathbf{s}^\star)\mid \mathbf{y}_{\mathbb{N}(\mathbf{s}^\star)}}, \sigma^2_{y(\mathbf{s}^\star) \mid \mathbf{y}_{\mathbb{N}(\mathbf{s}^\star)}} \right)\; \pi(\boldsymbol{\Phi}, \mid \mathbf{y}) \; d\boldsymbol{\Phi},
 \end{align}")
 
-which also does not have a closed form and composition sampling is used
+where the conditional mean is
+
+![\begin{align}
+\mu\_{\mathbf{y}(\mathbf{s}^\star) \\\|\\\mathbf{y}\_{\mathbb{N}(\mathbf{s}^\star)}} = \mathbf{x}(\mathbf{s}^\star)\boldsymbol{\theta} + \mathbf{V}\_{\mathbf{s}^\star,\mathbb{N}(\mathbf{s}^\star)} \mathbf{V}\_{\mathbb{N}(\mathbf{s}^\star)}^{-1} (\mathbf{y}\_{\mathbb{N}(\mathbf{s}^\star)} - \mathbf{X}\_{\mathbb{N}(\mathbf{s}^\star)}\boldsymbol{\theta})
+\end{align}](https://latex.codecogs.com/svg.image?%5Cbegin%7Balign%7D%0A%5Cmu_%7B%5Cmathbf%7By%7D%28%5Cmathbf%7Bs%7D%5E%5Cstar%29%20%5C%3B%7C%5C%3B%5Cmathbf%7By%7D_%7B%5Cmathbb%7BN%7D%28%5Cmathbf%7Bs%7D%5E%5Cstar%29%7D%7D%20%3D%20%5Cmathbf%7Bx%7D%28%5Cmathbf%7Bs%7D%5E%5Cstar%29%5Cboldsymbol%7B%5Ctheta%7D%20%2B%20%5Cmathbf%7BV%7D_%7B%5Cmathbf%7Bs%7D%5E%5Cstar%2C%5Cmathbb%7BN%7D%28%5Cmathbf%7Bs%7D%5E%5Cstar%29%7D%20%5Cmathbf%7BV%7D_%7B%5Cmathbb%7BN%7D%28%5Cmathbf%7Bs%7D%5E%5Cstar%29%7D%5E%7B-1%7D%20%28%5Cmathbf%7By%7D_%7B%5Cmathbb%7BN%7D%28%5Cmathbf%7Bs%7D%5E%5Cstar%29%7D%20-%20%5Cmathbf%7BX%7D_%7B%5Cmathbb%7BN%7D%28%5Cmathbf%7Bs%7D%5E%5Cstar%29%7D%5Cboldsymbol%7B%5Ctheta%7D%29%0A%5Cend%7Balign%7D "\begin{align}
+\mu_{\mathbf{y}(\mathbf{s}^\star) \;|\;\mathbf{y}_{\mathbb{N}(\mathbf{s}^\star)}} = \mathbf{x}(\mathbf{s}^\star)\boldsymbol{\theta} + \mathbf{V}_{\mathbf{s}^\star,\mathbb{N}(\mathbf{s}^\star)} \mathbf{V}_{\mathbb{N}(\mathbf{s}^\star)}^{-1} (\mathbf{y}_{\mathbb{N}(\mathbf{s}^\star)} - \mathbf{X}_{\mathbb{N}(\mathbf{s}^\star)}\boldsymbol{\theta})
+\end{align}")
+
+and conditional variance is
+
+![\begin{align}
+\boldsymbol{\Sigma}\_{\mathbf{y}(\mathbf{s}^\star) \\\|\\\mathbf{y}\_{\mathbb{N}(\mathbf{s}^\star)}} = V(\mathbf{s}^\star) - \mathbf{V}\_{\mathbf{s}^\star,\mathbb{N}(\mathbf{s}^\star)} \mathbf{V}\_{\mathbb{N}(\mathbf{s}^\star)}^{-1} \mathbf{V}\_{\mathbf{s}^\star,\mathbb{N}(\mathbf{s}^\star)}^\prime.
+\end{align}](https://latex.codecogs.com/svg.image?%5Cbegin%7Balign%7D%0A%5Cboldsymbol%7B%5CSigma%7D_%7B%5Cmathbf%7By%7D%28%5Cmathbf%7Bs%7D%5E%5Cstar%29%20%5C%3B%7C%5C%3B%5Cmathbf%7By%7D_%7B%5Cmathbb%7BN%7D%28%5Cmathbf%7Bs%7D%5E%5Cstar%29%7D%7D%20%3D%20V%28%5Cmathbf%7Bs%7D%5E%5Cstar%29%20-%20%5Cmathbf%7BV%7D_%7B%5Cmathbf%7Bs%7D%5E%5Cstar%2C%5Cmathbb%7BN%7D%28%5Cmathbf%7Bs%7D%5E%5Cstar%29%7D%20%5Cmathbf%7BV%7D_%7B%5Cmathbb%7BN%7D%28%5Cmathbf%7Bs%7D%5E%5Cstar%29%7D%5E%7B-1%7D%20%5Cmathbf%7BV%7D_%7B%5Cmathbf%7Bs%7D%5E%5Cstar%2C%5Cmathbb%7BN%7D%28%5Cmathbf%7Bs%7D%5E%5Cstar%29%7D%5E%5Cprime.%0A%5Cend%7Balign%7D "\begin{align}
+\boldsymbol{\Sigma}_{\mathbf{y}(\mathbf{s}^\star) \;|\;\mathbf{y}_{\mathbb{N}(\mathbf{s}^\star)}} = V(\mathbf{s}^\star) - \mathbf{V}_{\mathbf{s}^\star,\mathbb{N}(\mathbf{s}^\star)} \mathbf{V}_{\mathbb{N}(\mathbf{s}^\star)}^{-1} \mathbf{V}_{\mathbf{s}^\star,\mathbb{N}(\mathbf{s}^\star)}^\prime.
+\end{align}")
+
+This also does not have a closed form and composition sampling is used
 to obtain samples from
 ![\pi(y(\mathbf{s}^\star) \mid \mathbf{y})](https://latex.codecogs.com/svg.image?%5Cpi%28y%28%5Cmathbf%7Bs%7D%5E%5Cstar%29%20%5Cmid%20%5Cmathbf%7By%7D%29 "\pi(y(\mathbf{s}^\star) \mid \mathbf{y})").
 It requires sampling from
-![\mathcal{N}\bigl(y(\mathbf{s}^\star) \mid \mu\_{y(\mathbf{s}^\star)\mid \mathbf{y}}, \sigma^2\_{y(\mathbf{s}^\star) \mid \mathbf{y}}\bigr)](https://latex.codecogs.com/svg.image?%5Cmathcal%7BN%7D%5Cbigl%28y%28%5Cmathbf%7Bs%7D%5E%5Cstar%29%20%5Cmid%20%5Cmu_%7By%28%5Cmathbf%7Bs%7D%5E%5Cstar%29%5Cmid%20%5Cmathbf%7By%7D%7D%2C%20%5Csigma%5E2_%7By%28%5Cmathbf%7Bs%7D%5E%5Cstar%29%20%5Cmid%20%5Cmathbf%7By%7D%7D%5Cbigr%29 "\mathcal{N}\bigl(y(\mathbf{s}^\star) \mid \mu_{y(\mathbf{s}^\star)\mid \mathbf{y}}, \sigma^2_{y(\mathbf{s}^\star) \mid \mathbf{y}}\bigr)")
+![\mathcal{N}\bigl(y(\mathbf{s}^\star) \mid \mu\_{y(\mathbf{s}^\star)\mid \mathbf{y}\_{\mathbb{N}(\mathbf{s}^\star)}}, \sigma^2\_{y(\mathbf{s}^\star) \mid \mathbf{y}\_{\mathbb{N}(\mathbf{s}^\star)}}\bigr)](https://latex.codecogs.com/svg.image?%5Cmathcal%7BN%7D%5Cbigl%28y%28%5Cmathbf%7Bs%7D%5E%5Cstar%29%20%5Cmid%20%5Cmu_%7By%28%5Cmathbf%7Bs%7D%5E%5Cstar%29%5Cmid%20%5Cmathbf%7By%7D_%7B%5Cmathbb%7BN%7D%28%5Cmathbf%7Bs%7D%5E%5Cstar%29%7D%7D%2C%20%5Csigma%5E2_%7By%28%5Cmathbf%7Bs%7D%5E%5Cstar%29%20%5Cmid%20%5Cmathbf%7By%7D_%7B%5Cmathbb%7BN%7D%28%5Cmathbf%7Bs%7D%5E%5Cstar%29%7D%7D%5Cbigr%29 "\mathcal{N}\bigl(y(\mathbf{s}^\star) \mid \mu_{y(\mathbf{s}^\star)\mid \mathbf{y}_{\mathbb{N}(\mathbf{s}^\star)}}, \sigma^2_{y(\mathbf{s}^\star) \mid \mathbf{y}_{\mathbb{N}(\mathbf{s}^\star)}}\bigr)")
 for each posterior samples of
 ![\boldsymbol{\Phi}](https://latex.codecogs.com/svg.image?%5Cboldsymbol%7B%5CPhi%7D "\boldsymbol{\Phi}").
-
-However, when one is interested on the latent process model the
-Vecchia’s approximation does not work. Considering this situation, Datta
-et al. ([2016](#ref-datta2016hierarchical)) developed the NNGP as a
-sparse approximation of to a full GP. It generalizes the idea of Vecchia
-([1988](#ref-vecchia1988estimation)) from nearest neighbor approximation
-of a data likelihood to the nearest neighbor approximation of the
-likelihood of realizations of the process
-![z(\mathbf{s})](https://latex.codecogs.com/svg.image?z%28%5Cmathbf%7Bs%7D%29 "z(\mathbf{s})").
 
 ## Response NNGP in Stan
 
@@ -887,6 +905,17 @@ likelihood of realizations of the process
     generated quantities{
       
     }
+
+## Latent NNGP
+
+However, when one is interested on the latent process model the
+Vecchia’s approximation does not work. Considering this situation, Datta
+et al. ([2016](#ref-datta2016hierarchical)) developed the NNGP as a
+sparse approximation of to a full GP. It generalizes the idea of Vecchia
+([1988](#ref-vecchia1988estimation)) from nearest neighbor approximation
+of a data likelihood to the nearest neighbor approximation of the
+likelihood of realizations of the process
+![z(\mathbf{s})](https://latex.codecogs.com/svg.image?z%28%5Cmathbf%7Bs%7D%29 "z(\mathbf{s})").
 
 ## References
 
