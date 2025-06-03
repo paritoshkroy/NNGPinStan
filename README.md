@@ -288,12 +288,18 @@ In general, the distribution
 does not have a closed-form, and Markov chain Monte Carlo (MCMC)
 sampling methods are commonly employed to approximate this distribution.
 These methods are straightforward to implement using modern statistical
-computing platforms such as , , , and . MCMC methods provide samples
-from the posterior distribution, which can be used to estimate various
-summary statistics.
+computing platforms such as `BUGS`, `JAGS`, `NIMBLE`, and `Stan`. MCMC
+methods provide samples from the posterior distribution, which can be
+used to estimate various summary statistics. Once samples from the
+posterior distribution are available, predictions to unobserved
+locations follow straightforwardly.
 
-Once samples from the posterior distribution are available, predictions
-to unobserved locations follow straightforwardly.
+The described inference procedure utilizes a model that is marginalized
+with respect to the latent GP by integrating out the latent variable
+![\mathbf{z}](https://latex.codecogs.com/svg.image?%5Cmathbf%7Bz%7D "\mathbf{z}").
+This approach allows the model to directly predict the observed
+responses, which is why it is referred to as a response GP or marginal
+GP.
 
 ## Response GP in Stan
 
@@ -344,31 +350,22 @@ to unobserved locations follow straightforwardly.
 ### Spatial Interpolation
 
 One main interest in point-referenced spatial data analysis is obtaining
-an estimated surface for the process through pointwise prediction.
-Suppose that a vector of
-![p](https://latex.codecogs.com/svg.image?p "p") covariates values
-![\mathbf{x}(\mathbf{s}\_0)](https://latex.codecogs.com/svg.image?%5Cmathbf%7Bx%7D%28%5Cmathbf%7Bs%7D_0%29 "\mathbf{x}(\mathbf{s}_0)")
-at a generic prediction location
-![\mathbf{s}\_0 \in \mathcal{D}](https://latex.codecogs.com/svg.image?%5Cmathbf%7Bs%7D_0%20%5Cin%20%5Cmathcal%7BD%7D "\mathbf{s}_0 \in \mathcal{D}")
-is available. Following model, the posterior predictive distribution of
-![y(\mathbf{s})](https://latex.codecogs.com/svg.image?y%28%5Cmathbf%7Bs%7D%29 "y(\mathbf{s})")
-at
-![\mathbf{s}^\star](https://latex.codecogs.com/svg.image?%5Cmathbf%7Bs%7D%5E%5Cstar "\mathbf{s}^\star")
-is given by
-
-![\begin{align}
-\pi(y(\mathbf{s}^\star) \mid \mathbf{y}) = \int\_{\boldsymbol{\Phi}} \mathcal{N}(y(\mathbf{s}^\star) \mid \mathbf{X}\boldsymbol{\theta}, \mathbf{V}) \pi(\boldsymbol{\Phi} \mid \mathbf{y}) \mathrm{d}\boldsymbol{\Phi}
-\end{align}](https://latex.codecogs.com/svg.image?%5Cbegin%7Balign%7D%0A%5Cpi%28y%28%5Cmathbf%7Bs%7D%5E%5Cstar%29%20%5Cmid%20%5Cmathbf%7By%7D%29%20%3D%20%5Cint_%7B%5Cboldsymbol%7B%5CPhi%7D%7D%20%5Cmathcal%7BN%7D%28y%28%5Cmathbf%7Bs%7D%5E%5Cstar%29%20%5Cmid%20%5Cmathbf%7BX%7D%5Cboldsymbol%7B%5Ctheta%7D%2C%20%5Cmathbf%7BV%7D%29%20%5Cpi%28%5Cboldsymbol%7B%5CPhi%7D%20%5Cmid%20%5Cmathbf%7By%7D%29%20%5Cmathrm%7Bd%7D%5Cboldsymbol%7B%5CPhi%7D%0A%5Cend%7Balign%7D "\begin{align}
-\pi(y(\mathbf{s}^\star) \mid \mathbf{y}) = \int_{\boldsymbol{\Phi}} \mathcal{N}(y(\mathbf{s}^\star) \mid \mathbf{X}\boldsymbol{\theta}, \mathbf{V}) \pi(\boldsymbol{\Phi} \mid \mathbf{y}) \mathrm{d}\boldsymbol{\Phi}
-\end{align}")
-
-To predict the responses
-![\mathbf{y}^{\star} = (y(\mathbf{s}\_1^\star),\ldots,y(\mathbf{s}\_{n^\star}^\star))^\prime](https://latex.codecogs.com/svg.image?%5Cmathbf%7By%7D%5E%7B%5Cstar%7D%20%3D%20%28y%28%5Cmathbf%7Bs%7D_1%5E%5Cstar%29%2C%5Cldots%2Cy%28%5Cmathbf%7Bs%7D_%7Bn%5E%5Cstar%7D%5E%5Cstar%29%29%5E%5Cprime "\mathbf{y}^{\star} = (y(\mathbf{s}_1^\star),\ldots,y(\mathbf{s}_{n^\star}^\star))^\prime")
-at any set of
+a predicted surface for the process through pointwise prediction. Let
+![\\\mathbf{s}\_1^\star, \ldots, \mathbf{s}\_{n^\star}^\star\\](https://latex.codecogs.com/svg.image?%5C%7B%5Cmathbf%7Bs%7D_1%5E%5Cstar%2C%20%5Cldots%2C%20%5Cmathbf%7Bs%7D_%7Bn%5E%5Cstar%7D%5E%5Cstar%5C%7D "\{\mathbf{s}_1^\star, \ldots, \mathbf{s}_{n^\star}^\star\}")
+be a set of
 ![n^\star](https://latex.codecogs.com/svg.image?n%5E%5Cstar "n^\star")
-unobserved locations
-![\mathbf{s}\_1^\star,\ldots,\mathbf{s}\_{n^\star}^\star](https://latex.codecogs.com/svg.image?%5Cmathbf%7Bs%7D_1%5E%5Cstar%2C%5Cldots%2C%5Cmathbf%7Bs%7D_%7Bn%5E%5Cstar%7D%5E%5Cstar "\mathbf{s}_1^\star,\ldots,\mathbf{s}_{n^\star}^\star"),
-consider the joint vector
+high resoluted grid locations covering
+![\mathcal{D}](https://latex.codecogs.com/svg.image?%5Cmathcal%7BD%7D "\mathcal{D}")
+and suppose that vector of
+![p](https://latex.codecogs.com/svg.image?p "p") covariates values
+![\mathbf{x}(\mathbf{s}^\star)](https://latex.codecogs.com/svg.image?%5Cmathbf%7Bx%7D%28%5Cmathbf%7Bs%7D%5E%5Cstar%29 "\mathbf{x}(\mathbf{s}^\star)")
+at each site is available. To obtain predicted surface along with
+reporting uncertainty measures, we need posterior predicted distribution
+of
+![\mathbf{y}^\star = (y(\mathbf{s}\_1^\star),\ldots, y(\mathbf{s}\_{n^\star}^\star))^\prime](https://latex.codecogs.com/svg.image?%5Cmathbf%7By%7D%5E%5Cstar%20%3D%20%28y%28%5Cmathbf%7Bs%7D_1%5E%5Cstar%29%2C%5Cldots%2C%20y%28%5Cmathbf%7Bs%7D_%7Bn%5E%5Cstar%7D%5E%5Cstar%29%29%5E%5Cprime "\mathbf{y}^\star = (y(\mathbf{s}_1^\star),\ldots, y(\mathbf{s}_{n^\star}^\star))^\prime"),
+conditional on the observed data
+![\mathbf{y}](https://latex.codecogs.com/svg.image?%5Cmathbf%7By%7D "\mathbf{y}").
+For this purpose, consider the joint vector
 ![(\mathbf{y}^{\star\prime},\mathbf{y}^\prime)](https://latex.codecogs.com/svg.image?%28%5Cmathbf%7By%7D%5E%7B%5Cstar%5Cprime%7D%2C%5Cmathbf%7By%7D%5E%5Cprime%29 "(\mathbf{y}^{\star\prime},\mathbf{y}^\prime)"),
 under a Gaussian process assumption whose distribution is
 ![(n^\star + n)](https://latex.codecogs.com/svg.image?%28n%5E%5Cstar%20%2B%20n%29 "(n^\star + n)")–dimensional
@@ -414,23 +411,19 @@ denotes the
 ![n^\star \times n](https://latex.codecogs.com/svg.image?n%5E%5Cstar%20%5Ctimes%20n "n^\star \times n")
 spatial correlation matrix between prediction and observed locations.
 
-As this distribution is the univariate conditional distribution of a
-multivariate normal distribution of dimension
-![(n+1)](https://latex.codecogs.com/svg.image?%28n%2B1%29 "(n+1)"),
+However, the above joint prediction is computationally expensive as the
+conditional distribution of a multivariate normal distribution of
+dimension
+![(n^\star+n)](https://latex.codecogs.com/svg.image?%28n%5E%5Cstar%2Bn%29 "(n^\star+n)"),
 computing conditional mean
 ![\mu\_{y(\mathbf{s}^\star) \mid \mathbf{y}}](https://latex.codecogs.com/svg.image?%5Cmu_%7By%28%5Cmathbf%7Bs%7D%5E%5Cstar%29%20%5Cmid%20%5Cmathbf%7By%7D%7D "\mu_{y(\mathbf{s}^\star) \mid \mathbf{y}}")
 and variance
 ![\sigma^2\_{y(\mathbf{s}^\star) \mid \mathbf{y}}](https://latex.codecogs.com/svg.image?%5Csigma%5E2_%7By%28%5Cmathbf%7Bs%7D%5E%5Cstar%29%20%5Cmid%20%5Cmathbf%7By%7D%7D "\sigma^2_{y(\mathbf{s}^\star) \mid \mathbf{y}}")
-involves expensive matrix calculations.
-
-In practice, this can be avoided by performing prediction for each
-unobserved locations separately. In that case, at a generic prediction
-location
-![\mathbf{s}\_0 \in \mathcal{D}](https://latex.codecogs.com/svg.image?%5Cmathbf%7Bs%7D_0%20%5Cin%20%5Cmathcal%7BD%7D "\mathbf{s}_0 \in \mathcal{D}"),
-with a vector of ![p](https://latex.codecogs.com/svg.image?p "p")
-covariates values
-![\mathbf{x}(\mathbf{s}\_0)](https://latex.codecogs.com/svg.image?%5Cmathbf%7Bx%7D%28%5Cmathbf%7Bs%7D_0%29 "\mathbf{x}(\mathbf{s}_0)")
-is available. Following model, the posterior predictive distribution of
+involves expensive matrix calculations. In practice, this can be avoided
+by performing predictions for each unobserved location separately. In
+that case, at a generic prediction location
+![\mathbf{s}^\star \in \mathcal{D}](https://latex.codecogs.com/svg.image?%5Cmathbf%7Bs%7D%5E%5Cstar%20%5Cin%20%5Cmathcal%7BD%7D "\mathbf{s}^\star \in \mathcal{D}"),
+the posterior predictive distribution of
 ![y(\mathbf{s})](https://latex.codecogs.com/svg.image?y%28%5Cmathbf%7Bs%7D%29 "y(\mathbf{s})")
 at
 ![\mathbf{s}^\star](https://latex.codecogs.com/svg.image?%5Cmathbf%7Bs%7D%5E%5Cstar "\mathbf{s}^\star")
@@ -442,7 +435,10 @@ is given by
 \pi(y(\mathbf{s}^\star) \mid \mathbf{y}) = \int_{\boldsymbol{\Phi}} \mathcal{N}(y(\mathbf{s}^\star) \mid \mathbf{X}\boldsymbol{\theta}, \mathbf{V}) \pi(\boldsymbol{\Phi} \mid \mathbf{y}) \mathrm{d}\boldsymbol{\Phi}
 \end{align}")
 
-This procedure is known as is known an univariate prediction.
+This procedure is known as a univariate prediction, each step of which
+involves calculating the matrix inversion of order
+![n](https://latex.codecogs.com/svg.image?n "n") and is still expensive
+if ![n](https://latex.codecogs.com/svg.image?n "n") is large.
 
 ### Recovery of the Latent Component
 
@@ -461,13 +457,13 @@ posterior distribution of
 ![\mathbf{z}](https://latex.codecogs.com/svg.image?%5Cmathbf%7Bz%7D "\mathbf{z}")
 is
 
-![\begin{align\*}
+![\begin{align}
 \pi(\mathbf{z} \mid \mathbf{y}) &= \int \pi(\boldsymbol{\Phi}, \mathbf{z} \mid \mathbf{y}) \\ \mathrm{d} \boldsymbol{\Phi}\\
 &= \int \pi(\mathbf{z} \mid \boldsymbol{\Phi}, \mathbf{y}) \\ \pi(\boldsymbol{\Phi} \mid \mathbf{y}) \\ \mathrm{d} \boldsymbol{\Phi},
-\end{align\*}](https://latex.codecogs.com/svg.image?%5Cbegin%7Balign%2A%7D%0A%5Cpi%28%5Cmathbf%7Bz%7D%20%5Cmid%20%5Cmathbf%7By%7D%29%20%26%3D%20%5Cint%20%5Cpi%28%5Cboldsymbol%7B%5CPhi%7D%2C%20%5Cmathbf%7Bz%7D%20%5Cmid%20%5Cmathbf%7By%7D%29%20%5C%3B%20%5Cmathrm%7Bd%7D%20%5Cboldsymbol%7B%5CPhi%7D%5C%5C%0A%26%3D%20%5Cint%20%5Cpi%28%5Cmathbf%7Bz%7D%20%5Cmid%20%5Cboldsymbol%7B%5CPhi%7D%2C%20%5Cmathbf%7By%7D%29%20%5C%3B%20%5Cpi%28%5Cboldsymbol%7B%5CPhi%7D%20%5Cmid%20%5Cmathbf%7By%7D%29%20%5C%3B%20%5Cmathrm%7Bd%7D%20%5Cboldsymbol%7B%5CPhi%7D%2C%0A%5Cend%7Balign%2A%7D "\begin{align*}
+\end{align}](https://latex.codecogs.com/svg.image?%5Cbegin%7Balign%7D%0A%5Cpi%28%5Cmathbf%7Bz%7D%20%5Cmid%20%5Cmathbf%7By%7D%29%20%26%3D%20%5Cint%20%5Cpi%28%5Cboldsymbol%7B%5CPhi%7D%2C%20%5Cmathbf%7Bz%7D%20%5Cmid%20%5Cmathbf%7By%7D%29%20%5C%3B%20%5Cmathrm%7Bd%7D%20%5Cboldsymbol%7B%5CPhi%7D%5C%5C%0A%26%3D%20%5Cint%20%5Cpi%28%5Cmathbf%7Bz%7D%20%5Cmid%20%5Cboldsymbol%7B%5CPhi%7D%2C%20%5Cmathbf%7By%7D%29%20%5C%3B%20%5Cpi%28%5Cboldsymbol%7B%5CPhi%7D%20%5Cmid%20%5Cmathbf%7By%7D%29%20%5C%3B%20%5Cmathrm%7Bd%7D%20%5Cboldsymbol%7B%5CPhi%7D%2C%0A%5Cend%7Balign%7D "\begin{align}
 \pi(\mathbf{z} \mid \mathbf{y}) &= \int \pi(\boldsymbol{\Phi}, \mathbf{z} \mid \mathbf{y}) \; \mathrm{d} \boldsymbol{\Phi}\\
 &= \int \pi(\mathbf{z} \mid \boldsymbol{\Phi}, \mathbf{y}) \; \pi(\boldsymbol{\Phi} \mid \mathbf{y}) \; \mathrm{d} \boldsymbol{\Phi},
-\end{align*}")
+\end{align}")
 
 and
 
@@ -514,7 +510,7 @@ of the values of
 at unobserved locations
 ![\mathbf{s}\_{1}^\star, \ldots, \mathbf{s}\_{n^\star}^\star](https://latex.codecogs.com/svg.image?%5Cmathbf%7Bs%7D_%7B1%7D%5E%5Cstar%2C%20%5Cldots%2C%20%5Cmathbf%7Bs%7D_%7Bn%5E%5Cstar%7D%5E%5Cstar "\mathbf{s}_{1}^\star, \ldots, \mathbf{s}_{n^\star}^\star")
 via composition sampling. The procedure involves assuming joint vectors
-![(\mathbf{z}^{\star\prime},\mathbf{z}^\prime)](https://latex.codecogs.com/svg.image?%28%5Cmathbf%7Bz%7D%5E%7B%5Cstar%5Cprime%7D%2C%5Cmathbf%7Bz%7D%5E%5Cprime%29 "(\mathbf{z}^{\star\prime},\mathbf{z}^\prime)")
+![(\mathbf{z}^{\star\prime}, \mathbf{z}^\prime)](https://latex.codecogs.com/svg.image?%28%5Cmathbf%7Bz%7D%5E%7B%5Cstar%5Cprime%7D%2C%20%5Cmathbf%7Bz%7D%5E%5Cprime%29 "(\mathbf{z}^{\star\prime}, \mathbf{z}^\prime)")
 which follows
 ![(n^\star + n)](https://latex.codecogs.com/svg.image?%28n%5E%5Cstar%20%2B%20n%29 "(n^\star + n)")–dimensional
 multivariate normal distribution and conditional distribution of
@@ -529,6 +525,8 @@ multivariate normal with mean
 ![\mathbf{E}\[\mathbf{z}^\star \mid \mathbf{z}\] = \mathbf{B}^{\text{pred-to-obs}} \mathbf{B}^{-1} \mathbf{z}](https://latex.codecogs.com/svg.image?%5Cmathbf%7BE%7D%5B%5Cmathbf%7Bz%7D%5E%5Cstar%20%5Cmid%20%5Cmathbf%7Bz%7D%5D%20%3D%20%5Cmathbf%7BB%7D%5E%7B%5Ctext%7Bpred-to-obs%7D%7D%20%5Cmathbf%7BB%7D%5E%7B-1%7D%20%5Cmathbf%7Bz%7D "\mathbf{E}[\mathbf{z}^\star \mid \mathbf{z}] = \mathbf{B}^{\text{pred-to-obs}} \mathbf{B}^{-1} \mathbf{z}")
 and variance
 ![\text{Var}\[\mathbf{z}^\star \mid \mathbf{z}\] = \sigma^2 (\mathbf{B}^\star - \mathbf{B}^{\text{pred-to-obs}} \mathbf{B}^{-1} \mathbf{B}^{\text{obs-to-pred}})](https://latex.codecogs.com/svg.image?%5Ctext%7BVar%7D%5B%5Cmathbf%7Bz%7D%5E%5Cstar%20%5Cmid%20%5Cmathbf%7Bz%7D%5D%20%3D%20%5Csigma%5E2%20%28%5Cmathbf%7BB%7D%5E%5Cstar%20-%20%5Cmathbf%7BB%7D%5E%7B%5Ctext%7Bpred-to-obs%7D%7D%20%5Cmathbf%7BB%7D%5E%7B-1%7D%20%5Cmathbf%7BB%7D%5E%7B%5Ctext%7Bobs-to-pred%7D%7D%29 "\text{Var}[\mathbf{z}^\star \mid \mathbf{z}] = \sigma^2 (\mathbf{B}^\star - \mathbf{B}^{\text{pred-to-obs}} \mathbf{B}^{-1} \mathbf{B}^{\text{obs-to-pred}})").
+
+## Hierarchical representation of the above model
 
 Note that the model above specification is referred to as the marginal
 or response Gaussian model, and the inference and prediction procedures
@@ -738,18 +736,20 @@ the joint distribution
 can be approximated by evaluating
 ![q](https://latex.codecogs.com/svg.image?q "q")–dimensional normal
 distributions for ![n](https://latex.codecogs.com/svg.image?n "n")
-times. This facilitates computationally tractable operations and
-requires reduced storage. One of the benefits of the Vecchia’s
-approximation is computing the likelihood in involves only computing the
-conditional mean and variances in and requiring
+times.
+
+This approach facilitates computationally efficient operations while
+minimizing storage requirements. Specifically, Vecchia’s approximation
+for computing the likelihood involves calculating only the conditional
+mean and variances, which requires
 ![\mathcal{O}(nm^3)](https://latex.codecogs.com/svg.image?%5Cmathcal%7BO%7D%28nm%5E3%29 "\mathcal{O}(nm^3)")
-flops and
+floating point operations (flops) and
 ![\mathcal{O}(nm^2)](https://latex.codecogs.com/svg.image?%5Cmathcal%7BO%7D%28nm%5E2%29 "\mathcal{O}(nm^2)")
-storage as opposed to
+storage. In contrast, computing the exact GP likelihood would require
 ![\mathcal{O}(n^3)](https://latex.codecogs.com/svg.image?%5Cmathcal%7BO%7D%28n%5E3%29 "\mathcal{O}(n^3)")
 flops and
 ![\mathcal{O}(n^2)](https://latex.codecogs.com/svg.image?%5Cmathcal%7BO%7D%28n%5E2%29 "\mathcal{O}(n^2)")
-storage for computing the full GP likelihood.
+storage.
 
 **Spatial interpolation using Vecchia’s approximation**
 
